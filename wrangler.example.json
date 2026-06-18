@@ -1,0 +1,23 @@
+{
+    "$schema": "./node_modules/wrangler/config-schema.json",
+    "name": "reading-log",
+    "compatibility_date": "2026-06-17",
+    "main": "./worker/index.ts",
+    "assets": {
+        "not_found_handling": "single-page-application",
+        "run_worker_first": ["/api/*"]
+    },
+    "d1_databases": [
+        {
+            "binding": "DB",
+            "database_name": "reading",
+            "database_id": "YOUR_D1_DATABASE_ID"
+        }
+    ],
+    "r2_buckets": [
+        {
+            "binding": "BOOK_COVERS",
+            "bucket_name": "YOUR_R2_BUCKET_NAME"
+        }
+    ]
+}
