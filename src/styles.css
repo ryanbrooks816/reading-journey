@@ -1,0 +1,111 @@
+@import "tailwindcss";
+
+@theme {
+    --font-display: Charter, Georgia, "Times New Roman", serif;
+    --font-sans: Inter, ui-sans-serif, system-ui, sans-serif;
+}
+
+:root {
+    --paper: #eee5d1;
+    --paper-soft: #fff8e9;
+    --paper-deep: #cab891;
+    --ink: #2a231a;
+    --color-ink: #2a231a;
+    --muted: #766a57;
+    --line: rgba(55, 42, 25, 0.16);
+    --line-strong: rgba(55, 42, 25, 0.28);
+    --moss: #5f704b;
+    --water: #55747a;
+    --clay: #986e43;
+    --wine: #854654;
+    --violet: #685875;
+    --user-accent: #8d3b46;
+    --button-bg: rgba(255, 253, 250, 0.72);
+}
+
+body {
+    font-family: var(--font-display);
+    color: var(--ink);
+}
+
+.library-sidebar {
+    @apply sticky top-3 grid h-[calc(100vh-1.5rem)]
+        grid-rows-[auto_1fr_auto] gap-4 rounded-lg
+        border border-[rgba(68,48,25,0.2)]
+        bg-[var(--paper-soft)] p-3
+        shadow-[0_18px_40px_rgba(30,33,29,0.08)]
+        backdrop-blur-[18px]
+        max-md:static
+        max-md:z-40
+        max-md:h-auto
+        max-md:grid-cols-[auto_minmax(0,1fr)_auto]
+        max-md:grid-rows-none
+        max-md:items-center
+        max-md:gap-2;
+}
+
+.library-brand {
+    @apply grid grid-cols-[2.4rem_minmax(0,1fr)]
+        items-center gap-3 p-1.5
+        max-lg:grid-cols-1
+        max-lg:justify-items-center
+        max-md:hidden;
+}
+
+.library-brand-icon {
+    @apply grid size-10 place-items-center rounded-lg
+        bg-[var(--ink)] text-[var(--paper-soft)];
+}
+
+.library-brand-content {
+    @apply min-w-0 max-lg:hidden;
+}
+
+.library-brand-subtitle {
+    @apply font-sans text-[0.72rem] font-[850]
+        uppercase text-[var(--muted)];
+}
+
+.library-brand-title {
+    @apply truncate font-display text-base
+        font-[760] leading-[1.05]
+        text-[var(--ink)];
+}
+
+.library-nav {
+    @apply flex flex-col gap-1
+        max-md:flex-row
+        max-md:overflow-x-auto;
+}
+
+.library-nav-button {
+    @apply inline-flex min-h-11 items-center
+        justify-start gap-2 whitespace-nowrap
+        rounded-md border border-transparent
+        bg-transparent px-3 font-[780]
+        text-[var(--muted)]
+        transition duration-150
+        hover:-translate-y-0.5
+        max-lg:justify-center
+        max-lg:px-0
+        max-md:min-w-10;
+}
+
+.library-nav-button-active {
+    @apply bg-[var(--ink)] text-[var(--paper-soft)] shadow-none;
+}
+
+.library-nav-label {
+    @apply max-lg:hidden;
+}
+
+.library-actions {
+    @apply grid gap-2
+        max-md:flex
+        [&_.text-button]:w-full
+        [&_.text-button]:justify-start
+        [&_.text-button]:rounded-md
+        max-lg:[&_.text-button]:justify-center
+        max-lg:[&_.text-button]:px-0
+        max-lg:[&_.text-button_span]:hidden;
+}
