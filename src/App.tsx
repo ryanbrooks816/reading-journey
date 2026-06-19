@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { CSSProperties, useState } from "react";
+import { useStoredPreferences } from "./lib/preferences";
 import Sidebar from "./components/Sidebar";
 import { View } from "./components/Sidebar";
 import { ModalState } from "./components/Modal";
@@ -6,12 +7,14 @@ import { ModalState } from "./components/Modal";
 export default function App() {
     const [view, setView] = useState<View>("flow");
     const [modal, setModal] = useState<ModalState | null>(null);
+    const [preferences, setPreferences] = useStoredPreferences();
 
     return (
         <div
             className={
                 "min-h-screen bg-[linear-gradient(180deg,rgba(255,249,236,0.82),rgba(239,232,214,0.96)),linear-gradient(90deg,rgba(83,62,35,0.035)_1px,transparent_1px),linear-gradient(rgba(83,62,35,0.026)_1px,transparent_1px),var(--paper)] bg-[length:auto,30px_30px,30px_30px,auto] text-ink"
             }
+            style={{ "--user-accent": preferences.accent } as CSSProperties}
         >
             <div
                 className={
@@ -23,6 +26,7 @@ export default function App() {
                     setView={setView}
                     modal={modal}
                     setModal={setModal}
+                    preferences={preferences}
                 />
             </div>
         </div>

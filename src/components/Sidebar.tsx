@@ -7,6 +7,7 @@ import {
     Palette,
     Layers3,
 } from "lucide-react";
+import type { Preferences } from "../lib/preferences";
 import { IconTextButton } from "./ui/IconTextButton";
 import { ModalState } from "./Modal";
 
@@ -25,10 +26,11 @@ interface SidebarProps {
     setView: (view: View) => void;
     modal: ModalState | null;
     setModal: (modal: ModalState | null) => void;
+    preferences: Preferences;
 }
 
 export default function Sidebar(props: SidebarProps) {
-    const { view, setView, modal, setModal } = props;
+    const { view, setView, modal, setModal, preferences } = props;
 
     return (
         <aside className="library-sidebar">
@@ -40,7 +42,9 @@ export default function Sidebar(props: SidebarProps) {
                 <div className="library-brand-content">
                     <p className="library-brand-subtitle">Reading Log</p>
 
-                    <h1 className="library-brand-title">Reading Journey</h1>
+                    <h1 className="library-brand-title">
+                        {preferences.libraryName}
+                    </h1>
                 </div>
             </div>
 
