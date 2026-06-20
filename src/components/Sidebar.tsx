@@ -8,7 +8,7 @@ import {
     Layers3,
 } from "lucide-react";
 import type { Preferences } from "../lib/preferences";
-import { IconTextButton } from "./ui/IconTextButton";
+import IconTextButton from "./IconTextButton";
 import { ModalState } from "./Modal";
 
 export type View = "flow" | "library" | "history" | "stats" | "studio";
