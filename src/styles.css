@@ -85,8 +85,17 @@ button:disabled {
     color: var(--ink);
 }
 
+.icon-button .muted {
+    @apply text-[var(--muted)];
+}
+
 .icon-button:hover {
     transform: translateY(-2px);
+}
+
+.icon-button .primary {
+    background: var(--ink);
+    color: var(--paper-soft);
 }
 
 .icon-button:disabled {
@@ -183,6 +192,145 @@ button:disabled {
 .search-field input,
 .select-field select {
     @apply min-w-0 flex-1 border-0 bg-transparent text-[var(--ink)] outline-0;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.6rem;
+    margin-top: 1rem;
+}
+
+/* Detail, forms, and modal */
+
+.form-grid.two {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.form-grid label,
+.date-field label {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.form-grid span,
+.date-field span,
+.field-label {
+    color: var(--muted);
+    font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+    font-size: 0.82rem;
+    font-weight: 820;
+}
+
+.form-grid input,
+.form-grid textarea,
+.form-grid select,
+.date-field input,
+.date-field select {
+    min-height: 2.75rem;
+    width: 100%;
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    background: rgba(255, 253, 250, 0.82);
+    padding: 0.65rem 0.8rem;
+    color: var(--ink);
+    outline: 0;
+}
+
+.form-grid textarea {
+    min-height: 7rem;
+    resize: vertical;
+}
+
+.two-span {
+    grid-column: 1 / -1;
+}
+
+.date-field {
+    display: grid;
+    grid-template-columns: 0.85fr 1.15fr;
+    gap: 0.6rem;
+}
+
+.input-with-button {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.input-with-button input {
+    min-width: 0;
+    flex: 1;
+}
+
+.cover-upload-field {
+    display: flex;
+    min-height: 5.5rem;
+    align-items: center;
+    gap: 0.8rem;
+}
+
+.cover-upload-field .book-cover {
+    width: 4rem;
+    min-width: 4rem;
+}
+
+.file-button {
+    position: relative;
+    display: inline-flex;
+    min-height: 2.75rem;
+    cursor: pointer;
+    align-items: center;
+    gap: 0.45rem;
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    background: rgba(255, 253, 250, 0.82);
+    padding: 0.65rem 0.8rem;
+    color: var(--ink);
+    font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+    font-size: 0.88rem;
+    font-weight: 820;
+}
+
+.file-button input {
+    position: absolute;
+    inset: 0;
+    cursor: pointer;
+    opacity: 0;
+}
+
+.field-error {
+    color: var(--rust);
+    font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+    font-size: 0.8rem;
+    font-weight: 760;
+}
+
+.form-intro,
+.confirm-panel > p {
+    margin-bottom: 1rem;
+    color: var(--muted);
+    font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+    font-size: 0.85rem;
+    font-weight: 760;
+    line-height: 1.5;
+}
+
+.form-alert {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.55rem;
+    margin-bottom: 0.9rem;
+    border: 1px solid rgba(152, 110, 67, 0.24);
+    border-radius: 8px;
+    background: rgba(255, 246, 226, 0.8);
+    padding: 0.7rem;
+    color: var(--clay);
+    font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+    font-size: 0.82rem;
+    font-weight: 800;
+    line-height: 1.35;
 }
 
 /* Sidebar */
@@ -316,6 +464,7 @@ button:disabled {
 }
 
 .modal-heading h2 {
+    @apply font-display font-[760] leading-none;
     font-size: 1.7rem;
 }
 
@@ -374,7 +523,7 @@ blockquote {
 /* Book covers */
 
 .book-cover {
-    @apply relative aspect-[0.68] w-full max-w-[190px] min-w-[58px] overflow-hidden rounded-[4px_9px_9px_4px];
+    @apply relative aspect-[0.68] w-full max-w-[190px] min-w-[58px] overflow-hidden rounded-[6px];
 
     container-type: inline-size;
 

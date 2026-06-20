@@ -14,6 +14,7 @@ import {
     type LibraryState,
 } from "./lib/library";
 import { todayValue } from "./lib/dates";
+import { titleCase } from "./lib/format";
 import { useStoredPreferences } from "./lib/preferences";
 import type { BookWithMeta } from "./lib/types";
 import Sidebar from "./components/Sidebar";
@@ -22,6 +23,10 @@ import { LoadingPanel } from "./components/LoadingPanel";
 import { Book, ModalState } from "./lib/types";
 import ToastStack from "./components/ToastStack";
 import type { AppToast } from "./components/ToastStack";
+import Modal from "./components/Modal";
+import SeriesForm from "./components/SeriesForm";
+import BookForm from "./components/BookForm";
+import EntryForm from "./components/EntryForm";
 import LibraryPage from "./components/LibraryPage";
 import StudioPage from "./components/StudioPage";
 
@@ -318,6 +323,114 @@ export default function App() {
                         </main>
                     )}
                 </div>
+
+                {modal ? (
+                    <Modal onClose={() => setModal(null)}>
+                        {modal.type === "series" ? (
+                            <SeriesForm
+                                series={modal.series}
+                                saving={saving}
+                                onCancel={() => setModal(null)}
+                                onSubmit={(payload) =>
+                                    mutate(async () => {
+                                        const series = modal.series
+                                            ? await libraryApi.updateSeries(
+                                                  modal.series.id,
+                                                  payload,
+                                              )
+                                            : await libraryApi.createSeries(
+                                                  payload,
+                                              );
+                                        showToast({
+                                            title: modal.series
+                                                ? "Series updated"
+                                                : "Series added",
+                                            detail: `${series.title} is ready in Studio.`,
+                                            tone: "success",
+                                            action: {
+                                                label: "View studio",
+                                                view: "studio",
+                                            },
+                                        });
+                                        return series;
+                                    })
+                                }
+                            />
+                        ) : null}
+
+                        {modal.type === "book" ? (
+                            <BookForm
+                                book={modal.book}
+                                series={libraryState.series}
+                                saving={saving}
+                                onCancel={() => setModal(null)}
+                                onSubmit={(payload) =>
+                                    mutate(async () => {
+                                        const book = modal.book
+                                            ? await libraryApi.updateBook(
+                                                  modal.book.id,
+                                                  payload,
+                                              )
+                                            : await libraryApi.createBook(
+                                                  payload,
+                                              );
+                                        showToast({
+                                            title: modal.book
+                                                ? "Book updated"
+                                                : "Book added",
+                                            detail: `${book.title} is in your library.`,
+                                            tone: "success",
+                                            action: {
+                                                label: "View book",
+                                                view: "library",
+                                                bookId: book.id,
+                                            },
+                                        });
+                                        return book;
+                                    })
+                                }
+                            />
+                        ) : null}
+
+                        {modal.type === "entry" ? (
+                            <EntryForm
+                                entry={modal.entry}
+                                books={library.books}
+                                defaultBookId={modal.bookId}
+                                saving={saving}
+                                onCancel={() => setModal(null)}
+                                onSubmit={(payload) => {
+                                    const book = library.books.find(
+                                        (item) => item.id === payload.book_id,
+                                    );
+                                    return mutate(async () => {
+                                        const entry = modal.entry
+                                            ? await libraryApi.updateEntry(
+                                                  modal.entry.id,
+                                                  payload,
+                                              )
+                                            : await libraryApi.createEntry(
+                                                  payload,
+                                              );
+                                        showToast({
+                                            title: modal.entry
+                                                ? "Entry updated"
+                                                : "Entry added",
+                                            detail: `${book?.title ?? "This book"} is now marked ${titleCase(String(payload.status ?? "updated"))}.`,
+                                            tone: "success",
+                                            action: {
+                                                label: "View history",
+                                                view: "history",
+                                                bookId: book?.id,
+                                            },
+                                        });
+                                        return entry;
+                                    });
+                                }}
+                            />
+                        ) : null}
+                    </Modal>
+                ) : null}
 
                 <ToastStack
                     toasts={toasts}
