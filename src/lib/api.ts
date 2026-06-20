@@ -1,4 +1,4 @@
-import type { Series } from "./types";
+import type { Book, Series } from "./types";
 import type { LibraryState } from "./library";
 
 type RequestOptions = Omit<RequestInit, "body"> & {
@@ -45,4 +45,13 @@ export const libraryApi = {
 
     deleteSeries: (id: string) =>
         request<{ ok: true }>(`/series/${id}`, { method: "DELETE" }),
+
+    createBook: (body: Partial<Book>) =>
+        request<Book>("/books", { method: "POST", body }),
+
+    updateBook: (id: string, body: Partial<Book>) =>
+        request<Book>(`/books/${id}`, { method: "PUT", body }),
+
+    deleteBook: (id: string) =>
+        request<{ ok: true }>(`/books/${id}`, { method: "DELETE" }),
 };

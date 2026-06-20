@@ -1,13 +1,14 @@
 import { json } from "./utils";
+import { routeRequest } from "./api";
 
-interface Env {
+export interface Env {
     DB: D1Database;
     BOOK_COVERS?: R2Bucket;
 }
 
-type JsonRecord = Record<string, unknown>;
+export type JsonRecord = Record<string, unknown>;
 
-class ApiError extends Error {
+export class ApiError extends Error {
     status: number;
 
     constructor(status: number, message: string) {
@@ -15,6 +16,14 @@ class ApiError extends Error {
         this.status = status;
     }
 }
+
+export const TABLES = new Set([
+    "series",
+    "books",
+    "reading_entries",
+    "flow_nodes",
+    "flow_edges",
+]);
 
 const schemaStatements = [
     `CREATE TABLE IF NOT EXISTS series (
@@ -102,19 +111,4 @@ async function initializeDatabase(db: D1Database): Promise<void> {
     for (const statement of schemaStatements) {
         await db.prepare(statement).run();
     }
-}
-
-async function routeRequest(
-    request: Request,
-    env: Env,
-    url: URL,
-): Promise<Response> {
-    const db = env.DB;
-    const segments = url.pathname
-        .replace(/^\/api\/?/, "")
-        .split("/")
-        .filter(Boolean);
-    const [resource, id, action] = segments;
-
-    throw new ApiError(404, "That library route does not exist.");
 }

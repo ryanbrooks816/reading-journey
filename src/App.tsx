@@ -7,7 +7,11 @@ import {
     useMemo,
 } from "react";
 import { libraryApi } from "./lib/api";
-import { emptyLibraryState, type LibraryState } from "./lib/library";
+import {
+    buildLibrary,
+    emptyLibraryState,
+    type LibraryState,
+} from "./lib/library";
 import { useStoredPreferences } from "./lib/preferences";
 import Sidebar from "./components/Sidebar";
 import { View } from "./components/Sidebar";
@@ -32,9 +36,17 @@ export default function App() {
         setLoading(true);
         setError("");
 
-        // Load library state
+        try {
+            const next = await libraryApi.getState();
 
-        setLoading(false);
+            setState(next);
+        } catch (err) {
+            setError(
+                err instanceof Error ? err.message : "Unable to load library.",
+            );
+        } finally {
+            setLoading(false);
+        }
     }, []);
 
     useEffect(() => {
