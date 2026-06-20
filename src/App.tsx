@@ -8,6 +8,7 @@ import {
 } from "react";
 import { libraryApi } from "./lib/api";
 import {
+    isReading,
     buildLibrary,
     emptyLibraryState,
     type LibraryState,
@@ -19,6 +20,8 @@ import Sidebar from "./components/Sidebar";
 import { View } from "./components/Sidebar";
 import { LoadingPanel } from "./components/LoadingPanel";
 import { Book, ModalState } from "./lib/types";
+import ToastStack from "./components/ToastStack";
+import type { AppToast } from "./components/ToastStack";
 import LibraryPage from "./components/LibraryPage";
 import StudioPage from "./components/StudioPage";
 
@@ -27,6 +30,8 @@ export default function App() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState("");
+
+    const [toasts, setToasts] = useState<AppToast[]>([]);
 
     const [modal, setModal] = useState<ModalState | null>(null);
 
@@ -48,6 +53,7 @@ export default function App() {
             const next = await libraryApi.getState();
 
             setState(next);
+            setSelectedBookId(next.books[0]?.id ?? null);
         } catch (err) {
             setError(
                 err instanceof Error ? err.message : "Unable to load library.",
@@ -64,7 +70,28 @@ export default function App() {
     const refresh = useCallback(async () => {
         const next = await libraryApi.getState();
         setState(next);
+        setSelectedBookId((current) => current ?? next.books[0]?.id ?? null);
     }, []);
+
+    // Toasts
+
+    function showToast(next: Omit<AppToast, "id">) {
+        const id = Date.now();
+        setToasts((current) => [...current.slice(-2), { ...next, id }]);
+        window.setTimeout(() => {
+            setToasts((current) => current.filter((toast) => toast.id !== id));
+        }, 5200);
+    }
+
+    function followToast(toast: AppToast) {
+        if (toast.action?.bookId) {
+            setSelectedBookId(toast.action.bookId);
+        }
+        if (toast.action) {
+            setView(toast.action.view);
+        }
+        setToasts((current) => current.filter((item) => item.id !== toast.id));
+    }
 
     // Endpoints
 
@@ -95,6 +122,12 @@ export default function App() {
         }
         await mutate(async () => {
             const result = await libraryApi.deleteSeries(id);
+            showToast({
+                title: "Series deleted",
+                detail: `${series?.title ?? "The series"} was removed. Books stayed in your library.`,
+                tone: "info",
+                action: { label: "View studio", view: "studio" },
+            });
             return result;
         });
     }
@@ -106,6 +139,12 @@ export default function App() {
         }
         await mutate(async () => {
             const result = await libraryApi.deleteBook(id);
+            showToast({
+                title: "Book deleted",
+                detail: `${book?.title ?? "The book"} was removed from your library.`,
+                tone: "info",
+                action: { label: "View library", view: "library" },
+            });
             return result;
         });
     }
@@ -120,11 +159,35 @@ export default function App() {
         }
         await mutate(async () => {
             const result = await libraryApi.deleteEntry(id);
+            showToast({
+                title: "Entry deleted",
+                detail: `${book?.title ?? "The reading entry"} was removed from History.`,
+                tone: "info",
+                action: {
+                    label: "View history",
+                    view: "history",
+                    bookId: book?.id,
+                },
+            });
             return result;
         });
     }
 
     async function quickStart(book: BookWithMeta) {
+        if (isReading(book)) {
+            showToast({
+                title: "Already reading",
+                detail: `${book.title} already has an active reading entry.`,
+                tone: "warning",
+                action: {
+                    label: "View in library",
+                    view: "library",
+                    bookId: book.id,
+                },
+            });
+            return;
+        }
+
         await mutate(async () => {
             const entry = await libraryApi.createEntry({
                 book_id: book.id,
@@ -135,6 +198,16 @@ export default function App() {
                 end_value: "",
                 end_precision: "unknown",
                 entry_order: Date.now(),
+            });
+            showToast({
+                title: "Reading started",
+                detail: `${book.title} was added to your active reading entries.`,
+                tone: "success",
+                action: {
+                    label: "View history",
+                    view: "history",
+                    bookId: book.id,
+                },
             });
             return entry;
         });
@@ -148,6 +221,16 @@ export default function App() {
                 read_kind: book.readCount > 0 ? "reread" : "first",
                 period_label: book.readCount > 0 ? "Reread queue" : "Next up",
                 entry_order: Date.now(),
+            });
+            showToast({
+                title: "Planned entry added",
+                detail: `${book.title} is saved as a planned reading entry.`,
+                tone: "success",
+                action: {
+                    label: "View history",
+                    view: "history",
+                    bookId: book.id,
+                },
             });
             return entry;
         });
@@ -235,6 +318,16 @@ export default function App() {
                         </main>
                     )}
                 </div>
+
+                <ToastStack
+                    toasts={toasts}
+                    onFollow={followToast}
+                    onDismiss={(id) =>
+                        setToasts((current) =>
+                            current.filter((toast) => toast.id !== id),
+                        )
+                    }
+                />
             </div>
         </div>
     );

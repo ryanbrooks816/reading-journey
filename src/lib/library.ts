@@ -15,6 +15,10 @@ export interface LibraryState {
     generatedAt: string;
 }
 
+export function isReading(book: Pick<BookWithMeta, "entries">) {
+    return book.entries.some((entry) => entry.status === "reading");
+}
+
 export function buildLibrary(state: LibraryState) {
     const seriesById = new Map(state.series.map((item) => [item.id, item]));
     const entriesByBook = new Map<string, ReadingEntry[]>();
