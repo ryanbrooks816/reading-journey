@@ -7,9 +7,9 @@ import {
     Palette,
     Layers3,
 } from "lucide-react";
+import { ModalState } from "../lib/types";
 import type { Preferences } from "../lib/preferences";
-import IconTextButton from "./IconTextButton";
-import { ModalState } from "./Modal";
+import IconButton from "./IconButton";
 
 export type View = "flow" | "library" | "history" | "stats" | "studio";
 
@@ -71,19 +71,19 @@ export default function Sidebar(props: SidebarProps) {
             </nav>
 
             <div className="library-actions">
-                <IconTextButton
+                <IconButton
                     label="Book"
                     onClick={() => setModal({ type: "book" })}
                 >
                     <BookPlus size={17} />
-                </IconTextButton>
+                </IconButton>
 
-                <IconTextButton
+                <IconButton
                     label="Series"
                     onClick={() => setModal({ type: "series" })}
                 >
                     <Layers3 size={17} />
-                </IconTextButton>
+                </IconButton>
             </div>
         </aside>
     );
