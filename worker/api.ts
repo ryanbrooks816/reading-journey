@@ -23,6 +23,10 @@ export async function routeRequest(
         .filter(Boolean);
     const [resource, id, action] = segments;
 
+    if (request.method === "GET" && resource === "state") {
+        return json(await getState(db));
+    }
+
     if (resource === "series") {
         if (request.method === "POST" && !id) {
             return json(await createSeries(db, await readBody(request)), 201);
@@ -202,4 +206,23 @@ async function updateBook(db: D1Database, id: string, body: JsonRecord) {
         )
         .run();
     return fetchOne(db, "books", id);
+}
+
+async function getState(db: D1Database) {
+    const [series, books] = await Promise.all([
+        db
+            .prepare("SELECT * FROM series ORDER BY sort_order ASC, title ASC")
+            .all(),
+        db
+            .prepare(
+                "SELECT * FROM books ORDER BY COALESCE(series_id, ''), sort_order ASC, title ASC",
+            )
+            .all(),
+    ]);
+
+    return {
+        series: series.results,
+        books: books.results,
+        generatedAt: new Date().toISOString(),
+    };
 }

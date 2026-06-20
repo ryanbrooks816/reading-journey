@@ -16,7 +16,8 @@ import { useStoredPreferences } from "./lib/preferences";
 import Sidebar from "./components/Sidebar";
 import { View } from "./components/Sidebar";
 import { LoadingPanel } from "./components/LoadingPanel";
-import { ModalState } from "./lib/types";
+import { Book, ModalState } from "./lib/types";
+import LibraryPage from "./components/LibraryPage";
 import StudioPage from "./components/StudioPage";
 
 export default function App() {
@@ -31,6 +32,13 @@ export default function App() {
 
     const [libraryState, setState] = useState<LibraryState>(emptyLibraryState);
     const library = useMemo(() => buildLibrary(libraryState), [libraryState]);
+
+    console.log(library);
+
+    const [selectedBookId, setSelectedBookId] = useState<string | null>(null);
+    const selectedBook = selectedBookId
+        ? library.books.find((book) => book.id === selectedBookId)
+        : undefined;
 
     const loadLibrary = useCallback(async () => {
         setLoading(true);
@@ -91,6 +99,17 @@ export default function App() {
         });
     }
 
+    async function deleteBook(id: string) {
+        const book = library.books.find((item) => item.id === id);
+        if (!window.confirm("Delete this book and its reading entries?")) {
+            return;
+        }
+        await mutate(async () => {
+            const result = await libraryApi.deleteBook(id);
+            return result;
+        });
+    }
+
     return (
         <div
             className={
@@ -133,6 +152,20 @@ export default function App() {
                         <LoadingPanel />
                     ) : (
                         <main className={"min-w-0"}>
+                            {view === "library" ? (
+                                <LibraryPage
+                                    books={library.books}
+                                    series={libraryState.series}
+                                    selectedBook={selectedBook}
+                                    onSelectBook={setSelectedBookId}
+                                    onAddBook={() => setModal({ type: "book" })}
+                                    onEditBook={(book: Book) =>
+                                        setModal({ type: "book", book })
+                                    }
+                                    onDeleteBook={deleteBook}
+                                />
+                            ) : null}
+
                             {view === "studio" ? (
                                 <StudioPage
                                     preferences={preferences}

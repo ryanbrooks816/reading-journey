@@ -19,6 +19,7 @@ export function buildLibrary(state: LibraryState) {
     const seriesById = new Map(state.series.map((item) => [item.id, item]));
     const entriesByBook = new Map<string, ReadingEntry[]>();
 
+    // Group all reading entries by their associated book.
     for (const entry of state.entries) {
         entriesByBook.set(entry.book_id, [
             ...(entriesByBook.get(entry.book_id) ?? []),
@@ -26,6 +27,7 @@ export function buildLibrary(state: LibraryState) {
         ]);
     }
 
+    // Create a list of books with their associated metadata.
     const books: BookWithMeta[] = state.books.map((book) => {
         const entries = entriesByBook.get(book.id) ?? [];
         const sorted = entries
@@ -45,6 +47,7 @@ export function buildLibrary(state: LibraryState) {
         };
     });
 
+    // Sort the books by their series, sort order, and title.
     books.sort((a, b) => {
         const seriesA = a.series?.sort_order ?? 9999;
         const seriesB = b.series?.sort_order ?? 9999;
@@ -55,5 +58,6 @@ export function buildLibrary(state: LibraryState) {
         );
     });
 
+    // Return the final library state.
     return { books };
 }
