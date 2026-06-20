@@ -11,11 +11,21 @@ export function BookDetail({
     book,
     onEditBook,
     onDeleteBook,
+    onStart,
+    onQueue,
+    onAddEntry,
+    onEditEntry,
+    onDeleteEntry,
 }: {
     book: BookWithMeta;
     series: Series[];
     onEditBook: (book: Book) => void;
     onDeleteBook: (id: string) => void;
+    onStart: (book: BookWithMeta) => void;
+    onQueue: (book: BookWithMeta) => void;
+    onAddEntry: (bookId: string) => void;
+    onEditEntry: (entry: ReadingEntry) => void;
+    onDeleteEntry: (id: string) => void;
 }) {
     const sortedEntries = book.entries
         .slice()
@@ -48,6 +58,15 @@ export function BookDetail({
             </div>
 
             <div className="flex flex-wrap gap-2">
+                <IconButton label="Start" onClick={() => onStart(book)}>
+                    <Play size={16} />
+                </IconButton>
+                <IconButton label="Plan" onClick={() => onQueue(book)}>
+                    <ListPlus size={16} />
+                </IconButton>
+                <IconButton label="Entry" onClick={() => onAddEntry(book.id)}>
+                    <Plus size={16} />
+                </IconButton>
                 <IconButton label="Edit book" onClick={() => onEditBook(book)}>
                     <Pencil size={16} />
                 </IconButton>
@@ -89,6 +108,20 @@ export function BookDetail({
                                 {entry.review ? (
                                     <blockquote>{entry.review}</blockquote>
                                 ) : null}
+                            </div>
+                            <div className="flex gap-2 items-center">
+                                <IconButton
+                                    label="Edit entry"
+                                    onClick={() => onEditEntry(entry)}
+                                >
+                                    <Pencil size={15} />
+                                </IconButton>
+                                <IconButton
+                                    label="Delete entry"
+                                    onClick={() => onDeleteEntry(entry.id)}
+                                >
+                                    <Trash2 size={15} />
+                                </IconButton>
                             </div>
                         </article>
                     ))

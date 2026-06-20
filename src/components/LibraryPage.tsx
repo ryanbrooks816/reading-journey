@@ -14,6 +14,11 @@ export default function LibraryPage({
     onAddBook,
     onEditBook,
     onDeleteBook,
+    onStart,
+    onQueue,
+    onAddEntry,
+    onEditEntry,
+    onDeleteEntry,
 }: {
     books: BookWithMeta[];
     series: Series[];
@@ -22,6 +27,11 @@ export default function LibraryPage({
     onAddBook: () => void;
     onEditBook: (book: Book) => void;
     onDeleteBook: (id: string) => void;
+    onStart: (book: BookWithMeta) => void;
+    onQueue: (book: BookWithMeta) => void;
+    onAddEntry: (bookId: string) => void;
+    onEditEntry: (entry: ReadingEntry) => void;
+    onDeleteEntry: (id: string) => void;
 }) {
     const [query, setQuery] = useState("");
     const [category, setCategory] = useState("all");
@@ -112,6 +122,11 @@ export default function LibraryPage({
                             series={series}
                             onEditBook={onEditBook}
                             onDeleteBook={onDeleteBook}
+                            onStart={onStart}
+                            onQueue={onQueue}
+                            onAddEntry={onAddEntry}
+                            onEditEntry={onEditEntry}
+                            onDeleteEntry={onDeleteEntry}
                         />
                     ) : (
                         <p className="message-panel">

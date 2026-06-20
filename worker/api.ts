@@ -9,7 +9,10 @@ import {
     nullableText,
     integer,
     nullableInteger,
+    enumValue,
+    nullableRating,
 } from "./utils";
+import type { DatePrecision, ReadingStatus, ReadKind } from "../src/lib/types";
 
 export async function routeRequest(
     request: Request,
@@ -247,6 +250,43 @@ async function updateBook(db: D1Database, id: string, body: JsonRecord) {
         )
         .run();
     return fetchOne(db, "books", id);
+}
+
+function entryPayload(body: JsonRecord) {
+    const book_id = text(body.book_id).trim();
+    if (!book_id) {
+        throw new ApiError(400, "Book is required for a reading entry.");
+    }
+
+    return {
+        book_id,
+        status: enumValue<ReadingStatus>(body.status, [
+            "planned",
+            "reading",
+            "finished",
+            "paused",
+            "dnf",
+        ]),
+        read_kind: enumValue<ReadKind>(body.read_kind, ["first", "reread"]),
+        start_value: text(body.start_value),
+        start_precision: enumValue<DatePrecision>(body.start_precision, [
+            "unknown",
+            "year",
+            "month",
+            "exact",
+        ]),
+        end_value: text(body.end_value),
+        end_precision: enumValue<DatePrecision>(body.end_precision, [
+            "unknown",
+            "year",
+            "month",
+            "exact",
+        ]),
+        rating: nullableRating(body.rating),
+        review: text(body.review),
+        period_label: text(body.period_label),
+        entry_order: integer(body.entry_order),
+    };
 }
 
 async function createEntry(db: D1Database, body: JsonRecord) {

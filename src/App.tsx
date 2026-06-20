@@ -108,6 +108,49 @@ export default function App() {
         });
     }
 
+    async function deleteEntry(id: string) {
+        const entry = libraryState.entries.find((item) => item.id === id);
+        const book = entry
+            ? library.books.find((item) => item.id === entry.book_id)
+            : undefined;
+        if (!window.confirm("Delete this reading entry?")) {
+            return;
+        }
+        await mutate(async () => {
+            const result = await libraryApi.deleteEntry(id);
+            return result;
+        });
+    }
+
+    async function quickStart(book: BookWithMeta) {
+        await mutate(async () => {
+            const entry = await libraryApi.createEntry({
+                book_id: book.id,
+                status: "reading",
+                read_kind: book.readCount > 0 ? "reread" : "first",
+                start_value: todayValue(),
+                start_precision: "exact",
+                end_value: "",
+                end_precision: "unknown",
+                entry_order: Date.now(),
+            });
+            return entry;
+        });
+    }
+
+    async function quickQueue(book: BookWithMeta) {
+        await mutate(async () => {
+            const entry = await libraryApi.createEntry({
+                book_id: book.id,
+                status: "planned",
+                read_kind: book.readCount > 0 ? "reread" : "first",
+                period_label: book.readCount > 0 ? "Reread queue" : "Next up",
+                entry_order: Date.now(),
+            });
+            return entry;
+        });
+    }
+
     return (
         <div
             className={
@@ -161,6 +204,15 @@ export default function App() {
                                         setModal({ type: "book", book })
                                     }
                                     onDeleteBook={deleteBook}
+                                    onStart={quickStart}
+                                    onQueue={quickQueue}
+                                    onAddEntry={(bookId) =>
+                                        setModal({ type: "entry", bookId })
+                                    }
+                                    onEditEntry={(entry) =>
+                                        setModal({ type: "entry", entry })
+                                    }
+                                    onDeleteEntry={deleteEntry}
                                 />
                             ) : null}
 
