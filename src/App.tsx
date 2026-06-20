@@ -12,7 +12,9 @@ import {
     emptyLibraryState,
     type LibraryState,
 } from "./lib/library";
+import { todayValue } from "./lib/dates";
 import { useStoredPreferences } from "./lib/preferences";
+import type { BookWithMeta } from "./lib/types";
 import Sidebar from "./components/Sidebar";
 import { View } from "./components/Sidebar";
 import { LoadingPanel } from "./components/LoadingPanel";

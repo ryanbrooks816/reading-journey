@@ -125,3 +125,10 @@ export function displayEntryRange(entry: ReadingEntry): string {
 
     return `${start} - ${end}`;
 }
+
+/**
+ * Returns the current date in YYYY-MM-DD format.
+ */
+export function todayValue(): string {
+    return new Date().toISOString().slice(0, 10);
+}
