@@ -1,10 +1,11 @@
 import { X } from "lucide-react";
-import { CSSProperties, useState } from "react";
+import { CSSProperties, useState, useEffect, useCallback } from "react";
 import { useStoredPreferences } from "./lib/preferences";
 import Sidebar from "./components/Sidebar";
 import { View } from "./components/Sidebar";
 import { LoadingPanel } from "./components/LoadingPanel";
 import { ModalState } from "./lib/types";
+import StudioPage from "./components/StudioPage";
 
 export default function App() {
     const [view, setView] = useState<View>("flow");
@@ -14,6 +15,19 @@ export default function App() {
 
     const [modal, setModal] = useState<ModalState | null>(null);
     const [preferences, setPreferences] = useStoredPreferences();
+
+    const loadLibrary = useCallback(async () => {
+        setLoading(true);
+        setError("");
+
+        // Load library state
+
+        setLoading(false);
+    }, []);
+
+    useEffect(() => {
+        void loadLibrary();
+    }, [loadLibrary]);
 
     return (
         <div
@@ -56,7 +70,14 @@ export default function App() {
                     {loading ? (
                         <LoadingPanel />
                     ) : (
-                        <main className={"min-w-0"}></main>
+                        <main className={"min-w-0"}>
+                            {view === "studio" ? (
+                                <StudioPage
+                                    preferences={preferences}
+                                    setPreferences={setPreferences}
+                                />
+                            ) : null}
+                        </main>
                     )}
                 </div>
             </div>

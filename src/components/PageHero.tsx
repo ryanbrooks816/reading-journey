@@ -20,7 +20,7 @@ export function PageHero({
             className={`flex min-h-[4.9rem] items-center justify-between gap-4 rounded-lg border border-[rgba(68,48,25,0.2)] bg-[linear-gradient(180deg,rgba(255,250,240,0.88),rgba(250,241,222,0.68))] px-4 py-3 shadow-[0_12px_34px_rgba(43,31,18,0.06)] max-[760px]:items-start max-[760px]:flex-col`}
         >
             <div>
-                <span className="story-kicker">
+                <span className="kicker">
                     {icon}
                     {kicker}
                 </span>

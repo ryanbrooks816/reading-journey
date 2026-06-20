@@ -82,6 +82,56 @@ button:disabled {
     opacity: 0.48;
 }
 
+.panel-heading {
+    @apply mb-5 flex items-start justify-between gap-4 max-[760px]:flex-col;
+}
+
+.panel-heading h2 {
+    @apply font-display font-[760] leading-none;
+    font-size: clamp(1.1rem, 2vw, 1.55rem);
+}
+
+.kicker {
+    @apply inline-flex items-center gap-2 font-sans text-xs font-extrabold uppercase;
+    color: var(--user-accent);
+    letter-spacing: 0;
+}
+
+/* Forms */
+
+.form-grid {
+    @apply grid gap-[0.85rem];
+}
+
+.form-label {
+    @apply flex min-w-0 flex-col gap-1.5;
+}
+
+.form-control {
+    @apply min-h-11 w-full rounded-md border border-[var(--line)] bg-[rgba(255,253,250,0.82)] px-3 py-2 text-[var(--ink)] outline-0;
+}
+
+.swatches button {
+    width: 2.25rem;
+    height: 2.25rem;
+    border: 2px solid rgba(251, 246, 236, 0.9);
+    border-radius: 999px;
+    box-shadow: 0 0 0 1px var(--line);
+}
+
+.swatches button.active {
+    box-shadow:
+        0 0 0 2px var(--ink),
+        0 0 0 5px rgba(32, 29, 24, 0.08);
+}
+
+.field-label {
+    color: var(--muted);
+    font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+    font-size: 0.82rem;
+    font-weight: 820;
+}
+
 /* Sidebar */
 
 .library-sidebar {
