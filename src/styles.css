@@ -97,6 +97,10 @@ button:disabled {
     letter-spacing: 0;
 }
 
+.panel-list {
+    @apply flex flex-col gap-2;
+}
+
 /* Forms */
 
 .form-grid {

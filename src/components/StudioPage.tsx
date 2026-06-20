@@ -1,13 +1,24 @@
-import { Layers3, Palette } from "lucide-react";
+import { Layers3, Palette, Pencil, Plus, Trash2 } from "lucide-react";
+import type { CSSProperties } from "react";
+import type { Series } from "../lib/types";
 import type { Preferences } from "../lib/preferences";
+import IconButton from "./IconButton";
 import { PageHero } from "./PageHero";
 
 export default function StudioPage({
     preferences,
     setPreferences,
+    series,
+    onAddSeries,
+    onEditSeries,
+    onDeleteSeries,
 }: {
     preferences: Preferences;
     setPreferences: (next: Preferences) => void;
+    series: Series[];
+    onAddSeries: () => void;
+    onEditSeries: (series: Series) => void;
+    onDeleteSeries: (id: string) => void;
 }) {
     const accents = [
         "#8d3b46",
@@ -77,6 +88,32 @@ export default function StudioPage({
                             </span>
                             <h2>Manage series</h2>
                         </div>
+                        <IconButton label="Series" onClick={onAddSeries}>
+                            <Plus size={16} />
+                        </IconButton>
+                    </div>
+                    <div className="panel-list">
+                        {series.map((item) => (
+                            <article key={item.id}>
+                                <i style={{ background: item.color }} />
+                                <div>
+                                    <h3>{item.title}</h3>
+                                    <p>{item.author}</p>
+                                </div>
+                                <IconButton
+                                    label="Edit series"
+                                    onClick={() => onEditSeries(item)}
+                                >
+                                    <Pencil size={16} />
+                                </IconButton>
+                                <IconButton
+                                    label="Delete series"
+                                    onClick={() => onDeleteSeries(item.id)}
+                                >
+                                    <Trash2 size={16} />
+                                </IconButton>
+                            </article>
+                        ))}
                     </div>
                 </section>
             </div>

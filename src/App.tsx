@@ -1,5 +1,13 @@
 import { X } from "lucide-react";
-import { CSSProperties, useState, useEffect, useCallback } from "react";
+import {
+    CSSProperties,
+    useState,
+    useEffect,
+    useCallback,
+    useMemo,
+} from "react";
+import { libraryApi } from "./lib/api";
+import { emptyLibraryState, type LibraryState } from "./lib/library";
 import { useStoredPreferences } from "./lib/preferences";
 import Sidebar from "./components/Sidebar";
 import { View } from "./components/Sidebar";
@@ -14,7 +22,11 @@ export default function App() {
     const [error, setError] = useState("");
 
     const [modal, setModal] = useState<ModalState | null>(null);
+
     const [preferences, setPreferences] = useStoredPreferences();
+
+    const [libraryState, setState] = useState<LibraryState>(emptyLibraryState);
+    const library = useMemo(() => buildLibrary(libraryState), [libraryState]);
 
     const loadLibrary = useCallback(async () => {
         setLoading(true);
@@ -28,6 +40,44 @@ export default function App() {
     useEffect(() => {
         void loadLibrary();
     }, [loadLibrary]);
+
+    const refresh = useCallback(async () => {
+        const next = await libraryApi.getState();
+        setState(next);
+    }, []);
+
+    // Endpoints
+
+    async function mutate(operation: () => Promise<unknown>) {
+        setSaving(true);
+        setError("");
+        try {
+            await operation();
+            await refresh();
+            setModal(null);
+        } catch (err) {
+            setError(
+                err instanceof Error ? err.message : "Unable to save changes.",
+            );
+        } finally {
+            setSaving(false);
+        }
+    }
+
+    async function deleteSeries(id: string) {
+        const series = libraryState.series.find((item) => item.id === id);
+        if (
+            !window.confirm(
+                "Delete this series? Books will stay in the library.",
+            )
+        ) {
+            return;
+        }
+        await mutate(async () => {
+            const result = await libraryApi.deleteSeries(id);
+            return result;
+        });
+    }
 
     return (
         <div
@@ -75,6 +125,14 @@ export default function App() {
                                 <StudioPage
                                     preferences={preferences}
                                     setPreferences={setPreferences}
+                                    series={libraryState.series}
+                                    onAddSeries={() =>
+                                        setModal({ type: "series" })
+                                    }
+                                    onEditSeries={(series) =>
+                                        setModal({ type: "series", series })
+                                    }
+                                    onDeleteSeries={deleteSeries}
                                 />
                             ) : null}
                         </main>
