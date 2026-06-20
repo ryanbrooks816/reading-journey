@@ -55,7 +55,48 @@ export async function routeRequest(
         }
     }
 
+    if (resource === "entries") {
+        if (request.method === "POST" && !id) {
+            return json(await createEntry(db, await readBody(request)), 201);
+        }
+        if (request.method === "PUT" && id) {
+            return json(await updateEntry(db, id, await readBody(request)));
+        }
+        if (request.method === "DELETE" && id && !action) {
+            await db
+                .prepare("DELETE FROM reading_entries WHERE id = ?")
+                .bind(id)
+                .run();
+            return json({ ok: true });
+        }
+    }
+
     throw new ApiError(404, "That library route does not exist.");
+}
+
+async function getState(db: D1Database) {
+    const [series, books, entries] = await Promise.all([
+        db
+            .prepare("SELECT * FROM series ORDER BY sort_order ASC, title ASC")
+            .all(),
+        db
+            .prepare(
+                "SELECT * FROM books ORDER BY COALESCE(series_id, ''), sort_order ASC, title ASC",
+            )
+            .all(),
+        db
+            .prepare(
+                "SELECT * FROM reading_entries ORDER BY entry_order ASC, created_at ASC",
+            )
+            .all(),
+    ]);
+
+    return {
+        series: series.results,
+        books: books.results,
+        entries: entries.results,
+        generatedAt: new Date().toISOString(),
+    };
 }
 
 function seriesPayload(body: JsonRecord) {
@@ -208,21 +249,66 @@ async function updateBook(db: D1Database, id: string, body: JsonRecord) {
     return fetchOne(db, "books", id);
 }
 
-async function getState(db: D1Database) {
-    const [series, books] = await Promise.all([
-        db
-            .prepare("SELECT * FROM series ORDER BY sort_order ASC, title ASC")
-            .all(),
-        db
-            .prepare(
-                "SELECT * FROM books ORDER BY COALESCE(series_id, ''), sort_order ASC, title ASC",
-            )
-            .all(),
-    ]);
+async function createEntry(db: D1Database, body: JsonRecord) {
+    const id = makeId("entry");
+    const payload = entryPayload(body);
+    await db
+        .prepare(
+            `INSERT INTO reading_entries
+        (id, book_id, status, read_kind, start_value, start_precision, end_value, end_precision, rating, review, period_label, entry_order)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        )
+        .bind(
+            id,
+            payload.book_id,
+            payload.status,
+            payload.read_kind,
+            payload.start_value,
+            payload.start_precision,
+            payload.end_value,
+            payload.end_precision,
+            payload.rating,
+            payload.review,
+            payload.period_label,
+            payload.entry_order,
+        )
+        .run();
+    return fetchOne(db, "reading_entries", id);
+}
 
-    return {
-        series: series.results,
-        books: books.results,
-        generatedAt: new Date().toISOString(),
-    };
+async function updateEntry(db: D1Database, id: string, body: JsonRecord) {
+    const payload = entryPayload(body);
+    await db
+        .prepare(
+            `UPDATE reading_entries SET
+        book_id = ?,
+        status = ?,
+        read_kind = ?,
+        start_value = ?,
+        start_precision = ?,
+        end_value = ?,
+        end_precision = ?,
+        rating = ?,
+        review = ?,
+        period_label = ?,
+        entry_order = ?,
+        updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?`,
+        )
+        .bind(
+            payload.book_id,
+            payload.status,
+            payload.read_kind,
+            payload.start_value,
+            payload.start_precision,
+            payload.end_value,
+            payload.end_precision,
+            payload.rating,
+            payload.review,
+            payload.period_label,
+            payload.entry_order,
+            id,
+        )
+        .run();
+    return fetchOne(db, "reading_entries", id);
 }

@@ -33,8 +33,6 @@ export default function App() {
     const [libraryState, setState] = useState<LibraryState>(emptyLibraryState);
     const library = useMemo(() => buildLibrary(libraryState), [libraryState]);
 
-    console.log(library);
-
     const [selectedBookId, setSelectedBookId] = useState<string | null>(null);
     const selectedBook = selectedBookId
         ? library.books.find((book) => book.id === selectedBookId)
