@@ -21,6 +21,7 @@ export default function IconButton({
             aria-label={label}
         >
             {children}
+            <span>{label}</span>
         </button>
     );
 }
