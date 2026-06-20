@@ -63,4 +63,24 @@ export const libraryApi = {
 
     deleteEntry: (id: string) =>
         request<{ ok: true }>(`/entries/${id}`, { method: "DELETE" }),
+
+    uploadCover: async (file: File) => {
+        const body = new FormData();
+        body.append("file", file);
+        const response = await fetch("/api/covers", {
+            method: "POST",
+            body,
+        });
+        const payload = await response.json().catch(() => null);
+
+        if (!response.ok) {
+            const message =
+                payload && typeof payload === "object" && "error" in payload
+                    ? String(payload.error)
+                    : "Cover upload failed.";
+            throw new Error(message);
+        }
+
+        return payload as { key: string; url: string };
+    },
 };

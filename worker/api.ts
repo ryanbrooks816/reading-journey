@@ -74,6 +74,15 @@ export async function routeRequest(
         }
     }
 
+    if (resource === "covers") {
+        if (request.method === "POST" && !id) {
+            return json(await uploadCover(request, env), 201);
+        }
+        if (request.method === "GET" && id) {
+            return getCover(env, id);
+        }
+    }
+
     throw new ApiError(404, "That library route does not exist.");
 }
 
@@ -351,4 +360,64 @@ async function updateEntry(db: D1Database, id: string, body: JsonRecord) {
         )
         .run();
     return fetchOne(db, "reading_entries", id);
+}
+
+async function uploadCover(request: Request, env: Env) {
+    if (!env.BOOK_COVERS) {
+        throw new ApiError(500, "Book cover storage is not configured.");
+    }
+
+    const form = await request.formData().catch(() => null);
+    const file = form?.get("file");
+    if (!(file instanceof File)) {
+        throw new ApiError(400, "Cover upload requires a file.");
+    }
+    if (!["image/webp", "image/jpeg", "image/png"].includes(file.type)) {
+        throw new ApiError(
+            400,
+            "Cover uploads must be WebP, JPEG, or PNG images.",
+        );
+    }
+    if (file.size > 1_500_000) {
+        throw new ApiError(
+            400,
+            "Cover uploads must be 1.5 MB or smaller after optimization.",
+        );
+    }
+
+    const extension =
+        file.type === "image/png"
+            ? "png"
+            : file.type === "image/jpeg"
+              ? "jpg"
+              : "webp";
+    const key = `${crypto.randomUUID()}.${extension}`;
+    await env.BOOK_COVERS.put(key, file.stream(), {
+        httpMetadata: {
+            contentType: file.type,
+            cacheControl: "public, max-age=31536000, immutable",
+        },
+    });
+
+    return {
+        key,
+        url: `/api/covers/${key}`,
+    };
+}
+
+async function getCover(env: Env, key: string): Promise<Response> {
+    if (!env.BOOK_COVERS) {
+        throw new ApiError(500, "Book cover storage is not configured.");
+    }
+
+    const object = await env.BOOK_COVERS.get(key);
+    if (!object) {
+        throw new ApiError(404, "That cover image was not found.");
+    }
+
+    const headers = new Headers();
+    object.writeHttpMetadata(headers);
+    headers.set("etag", object.httpEtag);
+    headers.set("Cache-Control", "public, max-age=31536000, immutable");
+    return new Response(object.body, { headers });
 }
