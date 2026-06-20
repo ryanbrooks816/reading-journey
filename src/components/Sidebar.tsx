@@ -33,13 +33,15 @@ export default function Sidebar(props: SidebarProps) {
     const { view, setView, modal, setModal, preferences } = props;
 
     return (
-        <aside className="library-sidebar">
-            <div className="library-brand">
-                <span className="library-brand-icon">
+        <aside
+            className="library-sidebar sticky top-3 grid h-[calc(100vh-1.5rem)] grid-rows-[auto_1fr_auto] gap-4 p-3 max-md:static max-md:z-40 max-md:h-auto max-md:w-full max-md:min-w-0 max-md:grid-cols-[auto_minmax(0,1fr)_auto] max-md:grid-rows-none max-md:items-center max-md:gap-2 max-md:overflow-hidden"
+        >
+            <div className="grid grid-cols-[2.4rem_minmax(0,1fr)] items-center gap-3 p-1.5 max-lg:grid-cols-1 max-lg:justify-items-center max-md:hidden">
+                <span className="library-brand-icon grid size-10 place-items-center">
                     <BookOpen size={19} />
                 </span>
 
-                <div className="library-brand-content">
+                <div className="min-w-0 max-lg:hidden">
                     <p className="library-brand-subtitle">Reading Log</p>
 
                     <h1 className="library-brand-title">
@@ -48,7 +50,10 @@ export default function Sidebar(props: SidebarProps) {
                 </div>
             </div>
 
-            <nav className="library-nav" aria-label="Reading views">
+            <nav
+                className="flex min-w-0 flex-col gap-1 max-md:flex-row max-md:overflow-x-auto"
+                aria-label="Reading views"
+            >
                 {views.map((item) => {
                     const Icon = item.icon;
 
@@ -70,10 +75,11 @@ export default function Sidebar(props: SidebarProps) {
                 })}
             </nav>
 
-            <div className="library-actions">
+            <div className="grid shrink-0 gap-2 max-md:flex">
                 <IconButton
                     label="Book"
                     onClick={() => setModal({ type: "book" })}
+                    className="max-lg:aspect-square max-lg:min-h-10 max-lg:w-10 max-lg:px-0 max-lg:[&_span]:hidden"
                 >
                     <BookPlus size={17} />
                 </IconButton>
@@ -81,6 +87,7 @@ export default function Sidebar(props: SidebarProps) {
                 <IconButton
                     label="Series"
                     onClick={() => setModal({ type: "series" })}
+                    className="max-lg:aspect-square max-lg:min-h-10 max-lg:w-10 max-lg:px-0 max-lg:[&_span]:hidden"
                 >
                     <Layers3 size={17} />
                 </IconButton>

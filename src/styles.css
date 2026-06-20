@@ -139,36 +139,15 @@ button:disabled {
 /* Sidebar */
 
 .library-sidebar {
-    @apply sticky top-3 grid h-[calc(100vh-1.5rem)]
-        grid-rows-[auto_1fr_auto] gap-4 rounded-lg
-        border border-[rgba(68,48,25,0.2)]
-        bg-[var(--paper-soft)] p-3
+    @apply rounded-lg border border-[rgba(68,48,25,0.2)]
+        bg-[var(--paper-soft)]
         shadow-[0_18px_40px_rgba(30,33,29,0.08)]
-        backdrop-blur-[18px]
-        max-md:static
-        max-md:z-40
-        max-md:h-auto
-        max-md:grid-cols-[auto_minmax(0,1fr)_auto]
-        max-md:grid-rows-none
-        max-md:items-center
-        max-md:gap-2;
-}
-
-.library-brand {
-    @apply grid grid-cols-[2.4rem_minmax(0,1fr)]
-        items-center gap-3 p-1.5
-        max-lg:grid-cols-1
-        max-lg:justify-items-center
-        max-md:hidden;
+        backdrop-blur-[18px];
 }
 
 .library-brand-icon {
-    @apply grid size-10 place-items-center rounded-lg
+    @apply rounded-lg
         bg-[var(--ink)] text-[var(--paper-soft)];
-}
-
-.library-brand-content {
-    @apply min-w-0 max-lg:hidden;
 }
 
 .library-brand-subtitle {
@@ -180,12 +159,6 @@ button:disabled {
     @apply truncate font-display text-base
         font-[760] leading-[1.05]
         text-[var(--ink)];
-}
-
-.library-nav {
-    @apply flex flex-col gap-1
-        max-md:flex-row
-        max-md:overflow-x-auto;
 }
 
 .library-nav-button {
@@ -207,17 +180,6 @@ button:disabled {
 
 .library-nav-label {
     @apply max-lg:hidden;
-}
-
-.library-actions {
-    @apply grid gap-2
-        max-md:flex
-        [&_.text-button]:w-full
-        [&_.text-button]:justify-start
-        [&_.text-button]:rounded-md
-        max-lg:[&_.text-button]:justify-center
-        max-lg:[&_.text-button]:px-0
-        max-lg:[&_.text-button_span]:hidden;
 }
 
 /* Loading Panel */
