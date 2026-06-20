@@ -1,22 +1,26 @@
 import { ReactNode } from "react";
 
-export function IconTextButton({
+export default function IconButton({
     label,
     onClick,
     children,
+    disabled = false,
 }: {
     label: string;
     onClick: () => void;
     children: ReactNode;
+    disabled?: boolean;
 }) {
     return (
         <button
-            className="bg-[var(--button-bg)] text-ink inline-flex min-h-[2.35rem] items-center justify-center gap-2 whitespace-nowrap rounded-md border border-[var(--line)] px-3 font-bold transition duration-150"
+            className="icon-button"
+            disabled={disabled}
             onClick={onClick}
             type="button"
+            title={label}
+            aria-label={label}
         >
             {children}
-            <span>{label}</span>
         </button>
     );
 }
