@@ -36,16 +36,16 @@ export function BookDetail({
         );
 
     return (
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-4">
             <div className="grid grid-cols-[118px_minmax(0,1fr)] items-start gap-4 max-[760px]:grid-cols-1">
                 <BookCover book={book} scale={1.05} />
-                <div className="min-w-0">
-                    <p className="eyebrow">
+                <div className="book-detail min-w-0">
+                    <p className="kicker">
                         {book.series?.title ?? book.category}
                     </p>
-                    <h2>{book.title}</h2>
+                    <h2 className="mb-2">{book.title}</h2>
                     <p>{book.author}</p>
-                    <div className="mt-3">
+                    <div className="flex flex-wrap gap-2 items-center mt-2">
                         <span className="chip">
                             {book.pages
                                 ? `${formatNumber(book.pages)} pages`
@@ -83,7 +83,7 @@ export function BookDetail({
             <div className={"panel-list mt-4"}>
                 <div className="flex gap-6 justify-between items-end">
                     <div>
-                        <p className="eyebrow">Entries</p>
+                        <p className="kicker">Entries</p>
                         <h2>Reading sessions</h2>
                     </div>
                     <span className="chip">{book.readCount} finished</span>
