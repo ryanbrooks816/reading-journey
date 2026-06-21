@@ -610,34 +610,17 @@ blockquote {
 }
 
 .history-river {
-    position: relative;
-    padding-left: 0;
-}
-
-.history-river::before {
-    position: absolute;
-    top: 0.5rem;
-    bottom: 0.5rem;
-    left: 0.45rem;
-    width: 2px;
-    background: linear-gradient(
-        180deg,
-        transparent,
-        rgba(68, 48, 25, 0.22) 5%,
-        rgba(68, 48, 25, 0.22) 95%,
-        transparent
-    );
-    content: "";
+    padding-top: 0.25rem;
 }
 
 .history-month {
-    @apply grid grid-cols-[7rem_minmax(0,1fr)] gap-4 py-0.5 pb-5;
+    @apply grid grid-cols-[8rem_minmax(0,1fr)] gap-3 py-0.5 pb-5;
 }
 
 .history-date-label {
     position: sticky;
     top: 0.8rem;
-    padding-top: 0.28rem;
+    padding-top: 1.34rem;
     color: var(--muted);
     font-family: Inter, ui-sans-serif, system-ui, sans-serif;
     font-size: 0.75rem;
@@ -648,25 +631,49 @@ blockquote {
 }
 
 .history-month-items {
-    @apply grid gap-3;
+    position: relative;
+    display: grid;
+    gap: 0.9rem;
+}
+
+.history-month-items::before {
+    position: absolute;
+    top: 0.35rem;
+    bottom: -1.25rem;
+    left: 0.7rem;
+    width: 2px;
+    border-radius: 999px;
+    background: linear-gradient(
+        180deg,
+        rgba(68, 48, 25, 0.1),
+        rgba(68, 48, 25, 0.28) 12%,
+        rgba(68, 48, 25, 0.28) 88%,
+        rgba(68, 48, 25, 0.1)
+    );
+    content: "";
 }
 
 .history-item {
-    @apply relative grid grid-cols-[1rem_58px_minmax(0,1fr)] items-start gap-3;
+    position: relative;
+    display: grid;
+    grid-template-columns: 1.4rem 58px minmax(0, 1fr);
+    gap: 0.85rem;
+    align-items: start;
 }
 
 .history-marker {
     position: relative;
-    z-index: 1;
-    width: 0.7rem;
-    height: 0.7rem;
-    margin-top: 1.55rem;
-    margin-left: 0.1rem;
+    z-index: 2;
+    justify-self: center;
+    width: 0.72rem;
+    height: 0.72rem;
+    margin-top: 1.45rem;
     border-radius: 999px;
     background: var(--paper-soft);
     box-shadow:
         0 0 0 2px var(--user-accent),
-        0 0 0 6px rgba(255, 249, 236, 0.92);
+        0 0 0 6px rgba(255, 249, 236, 0.96),
+        0 6px 14px rgba(68, 48, 25, 0.12);
 }
 
 .history-item > button {
@@ -1126,13 +1133,12 @@ blockquote {
     }
 
     .history-month {
-        grid-template-columns: 1fr;
-        gap: 0.45rem;
+        grid-template-columns: 7rem minmax(0, 1fr);
+        gap: 0.9rem;
     }
 
     .history-date-label {
-        position: static;
-        text-align: left;
+        text-align: right;
     }
 }
 
@@ -1156,21 +1162,38 @@ blockquote {
         flex: 0 0 min(82vw, 24rem);
     }
 
-    .history-river::before,
-    .history-marker {
-        display: none;
+    .history-month {
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+        padding-bottom: 1.25rem;
+    }
+
+    .history-date-label {
+        position: static;
+        padding-top: 0;
+        text-align: left;
     }
 
     .history-item {
-        grid-template-columns: 54px minmax(0, 1fr);
+        grid-template-columns: 1.25rem 54px minmax(0, 1fr);
+        gap: 0.7rem;
+    }
+
+    .history-month-items::before {
+        left: 0.62rem;
+    }
+
+    .history-marker {
+        display: block;
+        margin-top: 1.35rem;
     }
 
     .history-item > button {
-        grid-column: 1;
+        grid-column: 2;
     }
 
     .history-copy {
-        grid-column: 2;
+        grid-column: 3;
     }
 
     .history-copy-top {
