@@ -1,5 +1,6 @@
 import type { Book, BookWithMeta, Series, ReadingEntry } from "./types";
 import { entrySortValue } from "./dates";
+import { entryYear, entryMonthKey, formatMonthLabel } from "./dates";
 
 export const emptyLibraryState: LibraryState = {
     series: [],
@@ -13,6 +14,28 @@ export interface LibraryState {
     series: Series[];
     entries: ReadingEntry[];
     generatedAt: string;
+}
+
+export interface LibraryStats {
+    finishedEntries: number;
+    uniqueFinishedBooks: number;
+    pagesRead: number;
+    averageRating: number | null;
+    yearly: Array<{
+        year: string;
+        count: number;
+        pages: number;
+    }>;
+    monthly: Array<{
+        month: string;
+        label: string;
+        count: number;
+    }>;
+    categories: Array<{
+        category: string;
+        books: number;
+        pages: number;
+    }>;
 }
 
 export function isReading(book: Pick<BookWithMeta, "entries">) {
@@ -64,4 +87,86 @@ export function buildLibrary(state: LibraryState) {
 
     // Return the final library state.
     return { books };
+}
+
+export function buildStats(
+    books: BookWithMeta[],
+    entries: ReadingEntry[],
+): LibraryStats {
+    const bookById = new Map(books.map((book) => [book.id, book]));
+    const finished = entries.filter((entry) => entry.status === "finished");
+    const pagesRead = finished.reduce(
+        (total, entry) => total + (bookById.get(entry.book_id)?.pages ?? 0),
+        0,
+    );
+    const ratings = finished
+        .map((entry) => entry.rating)
+        .filter((rating): rating is number => rating !== null);
+    const yearlyMap = new Map<
+        string,
+        { year: string; count: number; pages: number }
+    >();
+    const monthlyMap = new Map<
+        string,
+        { month: string; label: string; count: number }
+    >();
+    const categoryMap = new Map<
+        string,
+        { category: string; books: number; pages: number }
+    >();
+
+    for (const entry of finished) {
+        const book = bookById.get(entry.book_id);
+        const year = entryYear(entry);
+        const currentYear = yearlyMap.get(year) ?? { year, count: 0, pages: 0 };
+        currentYear.count += 1;
+        currentYear.pages += book?.pages ?? 0;
+        yearlyMap.set(year, currentYear);
+
+        const month = entryMonthKey(entry);
+        const currentMonth = monthlyMap.get(month) ?? {
+            month,
+            label: formatMonthLabel(month),
+            count: 0,
+        };
+        currentMonth.count += 1;
+        monthlyMap.set(month, currentMonth);
+    }
+
+    for (const book of books) {
+        const current = categoryMap.get(book.category) ?? {
+            category: book.category,
+            books: 0,
+            pages: 0,
+        };
+        current.books += 1;
+        current.pages += book.pages;
+        categoryMap.set(book.category, current);
+    }
+
+    return {
+        finishedEntries: finished.length,
+        uniqueFinishedBooks: new Set(finished.map((entry) => entry.book_id))
+            .size,
+        pagesRead,
+        averageRating: ratings.length
+            ? Number(
+                  (
+                      ratings.reduce((total, rating) => total + rating, 0) /
+                      ratings.length
+                  ).toFixed(1),
+              )
+            : null,
+        yearly: Array.from(yearlyMap.values()).sort((a, b) => {
+            if (a.year === "Undated") return 1;
+            if (b.year === "Undated") return -1;
+            return b.year.localeCompare(a.year);
+        }),
+        monthly: Array.from(monthlyMap.values()).sort((a, b) =>
+            a.month.localeCompare(b.month),
+        ),
+        categories: Array.from(categoryMap.values()).sort(
+            (a, b) => b.books - a.books,
+        ),
+    };
 }

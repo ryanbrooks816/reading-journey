@@ -132,3 +132,52 @@ export function displayEntryRange(entry: ReadingEntry): string {
 export function todayValue(): string {
     return new Date().toISOString().slice(0, 10);
 }
+
+export function entryYear(entry: ReadingEntry): string {
+    const value = entry.end_value || entry.start_value;
+    const precision = entry.end_value
+        ? entry.end_precision
+        : entry.start_precision;
+
+    if (!value || precision === "unknown") {
+        return "Undated";
+    }
+
+    return value.slice(0, 4);
+}
+
+export function entryMonthKey(entry: ReadingEntry): string {
+    const value = entry.end_value || entry.start_value;
+    const precision = entry.end_value
+        ? entry.end_precision
+        : entry.start_precision;
+
+    if (!value || precision === "unknown") {
+        return "Undated";
+    }
+
+    if (precision === "year") {
+        return `${value.slice(0, 4)}-flex`;
+    }
+
+    return value.slice(0, 7);
+}
+
+export function formatMonthLabel(value: string): string {
+    if (value === "Undated") {
+        return "Open";
+    }
+    if (value.endsWith("-flex")) {
+        return value.slice(0, 4);
+    }
+    const [year, month] = value.split("-");
+    if (!year || !month) {
+        return value;
+    }
+    return new Date(Number(year), Number(month) - 1, 1).toLocaleDateString(
+        undefined,
+        {
+            month: "short",
+        },
+    );
+}

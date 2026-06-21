@@ -10,13 +10,14 @@ import { libraryApi } from "./lib/api";
 import {
     isReading,
     buildLibrary,
+    buildStats,
     emptyLibraryState,
     type LibraryState,
 } from "./lib/library";
 import { todayValue } from "./lib/dates";
 import { titleCase } from "./lib/format";
 import { useStoredPreferences } from "./lib/preferences";
-import type { BookWithMeta } from "./lib/types";
+import type { BookWithMeta, ReadingEntry } from "./lib/types";
 import Sidebar from "./components/Sidebar";
 import { View } from "./components/Sidebar";
 import { LoadingPanel } from "./components/LoadingPanel";
@@ -28,7 +29,8 @@ import SeriesForm from "./components/SeriesForm";
 import BookForm from "./components/BookForm";
 import EntryForm from "./components/EntryForm";
 import LibraryPage from "./components/LibraryPage";
-import { HistoryPage } from "./components/HistoryPage";
+import HistoryPage from "./components/HistoryPage";
+import StatsPage from "./components/StatsPage";
 import StudioPage from "./components/StudioPage";
 
 export default function App() {
@@ -45,6 +47,10 @@ export default function App() {
 
     const [libraryState, setState] = useState<LibraryState>(emptyLibraryState);
     const library = useMemo(() => buildLibrary(libraryState), [libraryState]);
+    const libraryStats = useMemo(
+        () => buildStats(library.books, libraryState.entries),
+        [library.books, libraryState.entries],
+    );
 
     const [selectedBookId, setSelectedBookId] = useState<string | null>(null);
     const selectedBook = selectedBookId
@@ -311,11 +317,18 @@ export default function App() {
                                 <HistoryPage
                                     entries={libraryState.entries}
                                     books={library.books}
-                                    onEditEntry={(entry) =>
+                                    onEditEntry={(entry: ReadingEntry) =>
                                         setModal({ type: "entry", entry })
                                     }
                                     onDeleteEntry={deleteEntry}
                                     onSelectBook={setSelectedBookId}
+                                />
+                            ) : null}
+
+                            {view === "stats" ? (
+                                <StatsPage
+                                    stats={libraryStats}
+                                    books={library.books}
                                 />
                             ) : null}
 

@@ -65,7 +65,7 @@ export function groupTimelineEntries(entries: ReadingEntry[]) {
     return Array.from(groups.values());
 }
 
-export function HistoryPage({
+export default function HistoryPage({
     entries,
     books,
     onEditEntry,
