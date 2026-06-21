@@ -28,6 +28,7 @@ import SeriesForm from "./components/SeriesForm";
 import BookForm from "./components/BookForm";
 import EntryForm from "./components/EntryForm";
 import LibraryPage from "./components/LibraryPage";
+import { HistoryPage } from "./components/HistoryPage";
 import StudioPage from "./components/StudioPage";
 
 export default function App() {
@@ -303,6 +304,18 @@ export default function App() {
                                         setModal({ type: "entry", entry })
                                     }
                                     onDeleteEntry={deleteEntry}
+                                />
+                            ) : null}
+
+                            {view === "history" ? (
+                                <HistoryPage
+                                    entries={libraryState.entries}
+                                    books={library.books}
+                                    onEditEntry={(entry) =>
+                                        setModal({ type: "entry", entry })
+                                    }
+                                    onDeleteEntry={deleteEntry}
+                                    onSelectBook={setSelectedBookId}
                                 />
                             ) : null}
 
