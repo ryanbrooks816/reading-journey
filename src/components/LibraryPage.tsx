@@ -35,17 +35,22 @@ export default function LibraryPage({
 }) {
     const [query, setQuery] = useState("");
     const [category, setCategory] = useState("all");
+    const [seriesFilter, setSeriesFilter] = useState("all");
     const categories = Array.from(
         new Set(books.map((book) => book.category)),
     ).sort();
     const filtered = books.filter((book) => {
         const matchesQuery =
-            `${book.title} ${book.author} ${book.series?.title ?? ""}`
+            `${book.title} ${book.series?.author || book.author} ${book.series?.title ?? ""}`
                 .toLowerCase()
                 .includes(query.toLowerCase());
         const matchesCategory =
             category === "all" || book.category === category;
-        return matchesQuery && matchesCategory;
+        const matchesSeries =
+            seriesFilter === "all" ||
+            (seriesFilter === "standalone" && !book.series_id) ||
+            book.series_id === seriesFilter;
+        return matchesQuery && matchesCategory && matchesSeries;
     });
 
     return (
@@ -86,6 +91,23 @@ export default function LibraryPage({
                                 {categories.map((item) => (
                                     <option value={item} key={item}>
                                         {item}
+                                    </option>
+                                ))}
+                            </select>
+                        </label>
+                        <label className="select-field">
+                            <BookOpen size={17} />
+                            <select
+                                value={seriesFilter}
+                                onChange={(event) =>
+                                    setSeriesFilter(event.target.value)
+                                }
+                            >
+                                <option value="all">All series</option>
+                                <option value="standalone">Standalone</option>
+                                {series.map((item) => (
+                                    <option value={item.id} key={item.id}>
+                                        {item.title}
                                     </option>
                                 ))}
                             </select>
