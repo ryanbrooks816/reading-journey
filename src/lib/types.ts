@@ -64,3 +64,21 @@ export type ModalState =
     | { type: "book"; book?: Book }
     | { type: "series"; series?: Series }
     | { type: "entry"; entry?: ReadingEntry; bookId?: string };
+
+export interface FlowNode {
+    id: string;
+    book_id: string;
+    label: string;
+    position_x: number;
+    position_y: number;
+    node_order: number;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface FlowEdge {
+    id: string;
+    source_node_id: string;
+    target_node_id: string;
+    created_at: string;
+}

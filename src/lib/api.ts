@@ -1,4 +1,4 @@
-import type { Book, Series, ReadingEntry } from "./types";
+import type { Book, Series, ReadingEntry, FlowNode, FlowEdge } from "./types";
 import type { LibraryState } from "./library";
 
 type RequestOptions = Omit<RequestInit, "body"> & {
@@ -83,4 +83,19 @@ export const libraryApi = {
 
         return payload as { key: string; url: string };
     },
+
+    createFlowNode: (body: Partial<FlowNode>) =>
+        request<FlowNode>("/flow/nodes", { method: "POST", body }),
+
+    updateFlowNode: (id: string, body: Partial<FlowNode>) =>
+        request<FlowNode>(`/flow/nodes/${id}`, { method: "PUT", body }),
+
+    deleteFlowNode: (id: string) =>
+        request<{ ok: true }>(`/flow/nodes/${id}`, { method: "DELETE" }),
+
+    createFlowEdge: (body: Partial<FlowEdge>) =>
+        request<FlowEdge>("/flow/edges", { method: "POST", body }),
+
+    deleteFlowEdge: (id: string) =>
+        request<{ ok: true }>(`/flow/edges/${id}`, { method: "DELETE" }),
 };

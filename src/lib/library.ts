@@ -1,4 +1,11 @@
-import type { Book, BookWithMeta, Series, ReadingEntry } from "./types";
+import type {
+    Book,
+    BookWithMeta,
+    Series,
+    ReadingEntry,
+    FlowNode,
+    FlowEdge,
+} from "./types";
 import { entrySortValue } from "./dates";
 import { entryYear, entryMonthKey, formatMonthLabel } from "./dates";
 
@@ -6,6 +13,8 @@ export const emptyLibraryState: LibraryState = {
     series: [],
     books: [],
     entries: [],
+    flowNodes: [],
+    flowEdges: [],
     generatedAt: "",
 };
 
@@ -13,6 +22,8 @@ export interface LibraryState {
     books: Book[];
     series: Series[];
     entries: ReadingEntry[];
+    flowNodes: FlowNode[];
+    flowEdges: FlowEdge[];
     generatedAt: string;
 }
 
@@ -86,7 +97,13 @@ export function buildLibrary(state: LibraryState) {
     });
 
     // Return the final library state.
-    return { books };
+    return {
+        books,
+        series: state.series,
+        entries: state.entries,
+        flowNodes: state.flowNodes,
+        flowEdges: state.flowEdges,
+    };
 }
 
 export function buildStats(

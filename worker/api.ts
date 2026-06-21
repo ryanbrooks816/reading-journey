@@ -83,11 +83,50 @@ export async function routeRequest(
         }
     }
 
+    if (resource === "flow") {
+        if (id === "nodes") {
+            if (request.method === "POST" && !action) {
+                return json(
+                    await createFlowNode(db, await readBody(request)),
+                    201,
+                );
+            }
+            if (request.method === "PUT" && action) {
+                return json(
+                    await updateFlowNode(db, action, await readBody(request)),
+                );
+            }
+            if (request.method === "DELETE" && action) {
+                await db
+                    .prepare("DELETE FROM flow_nodes WHERE id = ?")
+                    .bind(action)
+                    .run();
+                return json({ ok: true });
+            }
+        }
+
+        if (id === "edges") {
+            if (request.method === "POST" && !action) {
+                return json(
+                    await createFlowEdge(db, await readBody(request)),
+                    201,
+                );
+            }
+            if (request.method === "DELETE" && action) {
+                await db
+                    .prepare("DELETE FROM flow_edges WHERE id = ?")
+                    .bind(action)
+                    .run();
+                return json({ ok: true });
+            }
+        }
+    }
+
     throw new ApiError(404, "That library route does not exist.");
 }
 
 async function getState(db: D1Database) {
-    const [series, books, entries] = await Promise.all([
+    const [series, books, entries, flowNodes, flowEdges] = await Promise.all([
         db
             .prepare("SELECT * FROM series ORDER BY sort_order ASC, title ASC")
             .all(),
@@ -101,12 +140,21 @@ async function getState(db: D1Database) {
                 "SELECT * FROM reading_entries ORDER BY entry_order ASC, created_at ASC",
             )
             .all(),
+
+        db
+            .prepare(
+                "SELECT * FROM flow_nodes ORDER BY node_order ASC, created_at ASC",
+            )
+            .all(),
+        db.prepare("SELECT * FROM flow_edges ORDER BY created_at ASC").all(),
     ]);
 
     return {
         series: series.results,
         books: books.results,
         entries: entries.results,
+        flowNodes: flowNodes.results,
+        flowEdges: flowEdges.results,
         generatedAt: new Date().toISOString(),
     };
 }
@@ -420,4 +468,114 @@ async function getCover(env: Env, key: string): Promise<Response> {
     headers.set("etag", object.httpEtag);
     headers.set("Cache-Control", "public, max-age=31536000, immutable");
     return new Response(object.body, { headers });
+}
+
+function flowNodePayload(body: JsonRecord) {
+    const book_id = text(body.book_id).trim();
+    if (!book_id) {
+        throw new ApiError(400, "Book is required for a flow node.");
+    }
+
+    return {
+        book_id,
+        label: text(body.label),
+        position_x: integer(body.position_x),
+        position_y: integer(body.position_y),
+        node_order: integer(body.node_order),
+    };
+}
+
+function flowEdgePayload(body: JsonRecord) {
+    const source_node_id = text(body.source_node_id).trim();
+    const target_node_id = text(body.target_node_id).trim();
+
+    if (!source_node_id || !target_node_id) {
+        throw new ApiError(
+            400,
+            "Both flow nodes are required for a connection.",
+        );
+    }
+    if (source_node_id === target_node_id) {
+        throw new ApiError(400, "A flow node cannot connect to itself.");
+    }
+
+    return { source_node_id, target_node_id };
+}
+
+async function createFlowNode(db: D1Database, body: JsonRecord) {
+    const id = makeId("flow");
+    const payload = flowNodePayload(body);
+    await db
+        .prepare(
+            `INSERT INTO flow_nodes
+        (id, book_id, label, position_x, position_y, node_order)
+      VALUES (?, ?, ?, ?, ?, ?)`,
+        )
+        .bind(
+            id,
+            payload.book_id,
+            payload.label,
+            payload.position_x,
+            payload.position_y,
+            payload.node_order,
+        )
+        .run();
+    return fetchOne(db, "flow_nodes", id);
+}
+
+async function updateFlowNode(db: D1Database, id: string, body: JsonRecord) {
+    const current = (await fetchOne(db, "flow_nodes", id)) as {
+        book_id: string;
+        label: string;
+        position_x: number;
+        position_y: number;
+        node_order: number;
+    };
+    const payload = flowNodePayload({ ...current, ...body });
+    await db
+        .prepare(
+            `UPDATE flow_nodes SET
+        book_id = ?,
+        label = ?,
+        position_x = ?,
+        position_y = ?,
+        node_order = ?,
+        updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?`,
+        )
+        .bind(
+            payload.book_id,
+            payload.label,
+            payload.position_x,
+            payload.position_y,
+            payload.node_order,
+            id,
+        )
+        .run();
+    return fetchOne(db, "flow_nodes", id);
+}
+
+async function createFlowEdge(db: D1Database, body: JsonRecord) {
+    const payload = flowEdgePayload(body);
+    const existing = await db
+        .prepare(
+            "SELECT * FROM flow_edges WHERE source_node_id = ? AND target_node_id = ?",
+        )
+        .bind(payload.source_node_id, payload.target_node_id)
+        .first();
+
+    if (existing) {
+        return existing;
+    }
+
+    const id = makeId("edge");
+    await db
+        .prepare(
+            `INSERT INTO flow_edges
+        (id, source_node_id, target_node_id)
+      VALUES (?, ?, ?)`,
+        )
+        .bind(id, payload.source_node_id, payload.target_node_id)
+        .run();
+    return fetchOne(db, "flow_edges", id);
 }

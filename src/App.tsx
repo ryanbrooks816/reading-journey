@@ -1,4 +1,4 @@
-import { X } from "lucide-react";
+import { X, ListPlus } from "lucide-react";
 import {
     CSSProperties,
     useState,
@@ -25,9 +25,12 @@ import { Book, ModalState } from "./lib/types";
 import ToastStack from "./components/ToastStack";
 import type { AppToast } from "./components/ToastStack";
 import Modal from "./components/Modal";
+import ConfirmPanel from "./components/ConfirmPanel";
 import SeriesForm from "./components/SeriesForm";
 import BookForm from "./components/BookForm";
 import EntryForm from "./components/EntryForm";
+import FlowPage from "./components/FlowPage";
+import { snapFlowPosition } from "./components/FlowPage";
 import LibraryPage from "./components/LibraryPage";
 import HistoryPage from "./components/HistoryPage";
 import StatsPage from "./components/StatsPage";
@@ -56,6 +59,9 @@ export default function App() {
     const selectedBook = selectedBookId
         ? library.books.find((book) => book.id === selectedBookId)
         : undefined;
+
+    const [duplicateFlowBook, setDuplicateFlowBook] =
+        useState<BookWithMeta | null>(null);
 
     const loadLibrary = useCallback(async () => {
         setLoading(true);
@@ -248,6 +254,141 @@ export default function App() {
         });
     }
 
+    async function addFlowNode(book: BookWithMeta, allowDuplicate = false) {
+        if (
+            !allowDuplicate &&
+            libraryState.flowNodes.some((node) => node.book_id === book.id)
+        ) {
+            setDuplicateFlowBook(book);
+            return;
+        }
+
+        const position = snapFlowPosition({
+            x: 128 + (libraryState.flowNodes.length % 5) * 320,
+            y: 128 + Math.floor(libraryState.flowNodes.length / 5) * 192,
+        });
+
+        await mutate(async () => {
+            const node = await libraryApi.createFlowNode({
+                book_id: book.id,
+                label: "",
+                position_x: position.x,
+                position_y: position.y,
+                node_order: Date.now(),
+            });
+            showToast({
+                title: "Added to flow",
+                detail: `${book.title} was placed on the journey chart.`,
+                tone: "success",
+                action: { label: "View flow", view: "flow", bookId: book.id },
+            });
+            setDuplicateFlowBook(null);
+            return node;
+        });
+    }
+
+    async function updateFlowNodePosition(
+        nodeId: string,
+        position: { x: number; y: number },
+    ) {
+        const currentNode = libraryState.flowNodes.find(
+            (node) => node.id === nodeId,
+        );
+        if (!currentNode) {
+            return;
+        }
+        const snappedPosition = snapFlowPosition(position);
+
+        setState((current) => ({
+            ...current,
+            flowNodes: current.flowNodes.map((node) =>
+                node.id === nodeId
+                    ? {
+                          ...node,
+                          position_x: snappedPosition.x,
+                          position_y: snappedPosition.y,
+                      }
+                    : node,
+            ),
+        }));
+
+        try {
+            await libraryApi.updateFlowNode(nodeId, {
+                ...currentNode,
+                position_x: snappedPosition.x,
+                position_y: snappedPosition.y,
+            });
+        } catch (err) {
+            setError(
+                err instanceof Error
+                    ? err.message
+                    : "Unable to save the flow position.",
+            );
+            await refresh();
+        }
+    }
+
+    async function addFlowEdge(sourceNodeId: string, targetNodeId: string) {
+        if (sourceNodeId === targetNodeId) {
+            return;
+        }
+        const exists = libraryState.flowEdges.some(
+            (edge) =>
+                edge.source_node_id === sourceNodeId &&
+                edge.target_node_id === targetNodeId,
+        );
+        if (exists) {
+            return;
+        }
+
+        setSaving(true);
+        setError("");
+        try {
+            await libraryApi.createFlowEdge({
+                source_node_id: sourceNodeId,
+                target_node_id: targetNodeId,
+            });
+            showToast({
+                title: "Flow connected",
+                detail: "Those books are now linked on the journey chart.",
+                tone: "success",
+                action: { label: "View flow", view: "flow" },
+            });
+            await refresh();
+        } catch (err) {
+            setError(
+                err instanceof Error
+                    ? err.message
+                    : "Unable to connect those books.",
+            );
+        } finally {
+            setSaving(false);
+        }
+    }
+
+    async function deleteFlowEdge(edgeId: string) {
+        setSaving(true);
+        setError("");
+        try {
+            await libraryApi.deleteFlowEdge(edgeId);
+            showToast({
+                title: "Connection removed",
+                detail: "The flow link was removed from the chart.",
+                tone: "info",
+                action: { label: "View flow", view: "flow" },
+            });
+            await refresh();
+        } catch (err) {
+            setError(
+                err instanceof Error
+                    ? err.message
+                    : "Unable to remove that connection.",
+            );
+        } finally {
+            setSaving(false);
+        }
+    }
+
     return (
         <div
             className={
@@ -290,6 +431,24 @@ export default function App() {
                         <LoadingPanel />
                     ) : (
                         <main className={"min-w-0"}>
+                            {view === "flow" ? (
+                                <FlowPage
+                                    books={library.books}
+                                    series={libraryState.series}
+                                    flowNodes={libraryState.flowNodes}
+                                    flowEdges={libraryState.flowEdges}
+                                    stats={libraryStats}
+                                    onSelectBook={setSelectedBookId}
+                                    onStart={quickStart}
+                                    onAddFlowNode={addFlowNode}
+                                    onUpdateFlowNodePosition={
+                                        updateFlowNodePosition
+                                    }
+                                    onAddFlowEdge={addFlowEdge}
+                                    onDeleteFlowEdge={deleteFlowEdge}
+                                />
+                            ) : null}
+
                             {view === "library" ? (
                                 <LibraryPage
                                     books={library.books}
@@ -349,6 +508,16 @@ export default function App() {
                         </main>
                     )}
                 </div>
+
+                <ToastStack
+                    toasts={toasts}
+                    onFollow={followToast}
+                    onDismiss={(id) =>
+                        setToasts((current) =>
+                            current.filter((toast) => toast.id !== id),
+                        )
+                    }
+                />
 
                 {modal ? (
                     <Modal onClose={() => setModal(null)}>
@@ -458,15 +627,21 @@ export default function App() {
                     </Modal>
                 ) : null}
 
-                <ToastStack
-                    toasts={toasts}
-                    onFollow={followToast}
-                    onDismiss={(id) =>
-                        setToasts((current) =>
-                            current.filter((toast) => toast.id !== id),
-                        )
-                    }
-                />
+                {duplicateFlowBook ? (
+                    <Modal onClose={() => setDuplicateFlowBook(null)}>
+                        <ConfirmPanel
+                            icon={<ListPlus size={20} />}
+                            title="Already on the chart"
+                            detail={`${duplicateFlowBook.title} is already in the flow. Add another copy anyway?`}
+                            confirmLabel="Add anyway"
+                            saving={saving}
+                            onCancel={() => setDuplicateFlowBook(null)}
+                            onConfirm={() =>
+                                addFlowNode(duplicateFlowBook, true)
+                            }
+                        />
+                    </Modal>
+                ) : null}
             </div>
         </div>
     );
