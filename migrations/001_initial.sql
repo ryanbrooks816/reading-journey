@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS books (
   title TEXT NOT NULL,
   author TEXT NOT NULL DEFAULT '',
   sort_order INTEGER NOT NULL DEFAULT 0,
-  pages INTEGER NOT NULL DEFAULT 0,
+  word_count INTEGER NOT NULL DEFAULT 0,
   category TEXT NOT NULL DEFAULT 'Fantasy',
   format TEXT NOT NULL DEFAULT 'Novel',
   cover_image_url TEXT NOT NULL DEFAULT '',

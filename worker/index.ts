@@ -43,7 +43,7 @@ const schemaStatements = [
     title TEXT NOT NULL,
     author TEXT NOT NULL DEFAULT '',
     sort_order INTEGER NOT NULL DEFAULT 0,
-    pages INTEGER NOT NULL DEFAULT 0,
+    word_count INTEGER NOT NULL DEFAULT 0,
     category TEXT NOT NULL DEFAULT 'Fantasy',
     format TEXT NOT NULL DEFAULT 'Novel',
     cover_image_url TEXT NOT NULL DEFAULT '',
@@ -131,5 +131,25 @@ async function ensureDatabase(db: D1Database): Promise<void> {
 async function initializeDatabase(db: D1Database): Promise<void> {
     for (const statement of schemaStatements) {
         await db.prepare(statement).run();
+    }
+    await migrateBooksToWordCount(db);
+}
+
+async function migrateBooksToWordCount(db: D1Database): Promise<void> {
+    const columns = await db.prepare("PRAGMA table_info(books)").all();
+    const names = new Set(
+        columns.results.map((column) => String(column.name ?? "")),
+    );
+
+    if (!names.has("word_count")) {
+        await db
+            .prepare("ALTER TABLE books ADD COLUMN word_count INTEGER NOT NULL DEFAULT 0")
+            .run();
+    }
+
+    if (names.has("pages")) {
+        await db
+            .prepare("UPDATE books SET word_count = pages WHERE word_count = 0 AND pages > 0")
+            .run();
     }
 }

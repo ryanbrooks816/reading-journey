@@ -25,7 +25,7 @@ export interface Book {
     title: string;
     author: string;
     sort_order: number;
-    pages: number;
+    word_count: number;
     category: string;
     format: string;
     cover_image_url: string;

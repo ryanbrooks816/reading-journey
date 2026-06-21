@@ -44,12 +44,12 @@ export function BookDetail({
                         {book.series?.title ?? book.category}
                     </p>
                     <h2 className="mb-2">{book.title}</h2>
-                    <p>{book.author}</p>
+                    <p>{book.series?.author || book.author}</p>
                     <div className="flex flex-wrap gap-2 items-center mt-2">
                         <span className="chip">
-                            {book.pages
-                                ? `${formatNumber(book.pages)} pages`
-                                : "Pages open"}
+                            {book.word_count
+                                ? `${formatNumber(book.word_count)} words`
+                                : "Word count open"}
                         </span>
                         <span>{book.publication_year ?? "Year open"}</span>
                         <span>{book.format}</span>

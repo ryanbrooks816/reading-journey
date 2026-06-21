@@ -24,7 +24,7 @@ export default function BookForm({
         title: book?.title ?? "",
         author: book?.author ?? "",
         sort_order: book?.sort_order ?? 0,
-        pages: book?.pages ?? 0,
+        word_count: book?.word_count ?? 0,
         category: book?.category ?? "Fantasy",
         format: book?.format ?? "Novel",
         cover_image_url: book?.cover_image_url ?? "",
@@ -36,11 +36,13 @@ export default function BookForm({
         uploading: false,
         error: "",
     });
+    const selectedSeries = series.find((item) => item.id === form.series_id);
 
     function submit(event: FormEvent) {
         event.preventDefault();
         onSubmit({
             ...form,
+            author: selectedSeries?.author || form.author,
             publication_year: form.publication_year
                 ? Number(form.publication_year)
                 : null,
@@ -101,15 +103,28 @@ export default function BookForm({
                         onChange={(event) =>
                             setForm({ ...form, author: event.target.value })
                         }
+                        disabled={Boolean(selectedSeries?.author)}
+                        placeholder={
+                            selectedSeries?.author
+                                ? "Inherited from selected series"
+                                : undefined
+                        }
                     />
                 </label>
                 <label>
                     <span>Series</span>
                     <select
                         value={form.series_id}
-                        onChange={(event) =>
-                            setForm({ ...form, series_id: event.target.value })
-                        }
+                        onChange={(event) => {
+                            const selectedSeries = series.find(
+                                (item) => item.id === event.target.value,
+                            );
+                            setForm({
+                                ...form,
+                                series_id: event.target.value,
+                                author: selectedSeries?.author ?? form.author,
+                            });
+                        }}
                     >
                         <option value="">Standalone</option>
                         {series.map((item) => (
@@ -133,15 +148,15 @@ export default function BookForm({
                     />
                 </label>
                 <label>
-                    <span>Pages</span>
+                    <span>Word count</span>
                     <input
                         type="number"
                         min="0"
-                        value={form.pages}
+                        value={form.word_count}
                         onChange={(event) =>
                             setForm({
                                 ...form,
-                                pages: Number(event.target.value),
+                                word_count: Number(event.target.value),
                             })
                         }
                     />

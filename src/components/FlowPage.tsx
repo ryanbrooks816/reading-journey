@@ -230,8 +230,8 @@ export default function FlowPage({
                     { label: "Next", value: nextNodeIds.size },
                     { label: "Finished", value: stats.finishedEntries },
                     {
-                        label: "Pages",
-                        value: formatNumber(stats.pagesRead),
+                        label: "Words",
+                        value: formatNumber(stats.wordsRead),
                     },
                 ]}
             />
@@ -568,7 +568,7 @@ function LibraryPicker({
     ).sort();
     const filtered = books.filter((book) => {
         const matchesQuery =
-            `${book.title} ${book.author} ${book.series?.title ?? ""}`
+            `${book.title} ${book.series?.author || book.author} ${book.series?.title ?? ""}`
                 .toLowerCase()
                 .includes(query.toLowerCase());
         const matchesCategory =

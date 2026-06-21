@@ -12,7 +12,7 @@ export default function StatsPage({
     stats: ReturnType<typeof buildStats>;
     books: BookWithMeta[];
 }) {
-    const maxYearPages = Math.max(...stats.yearly.map((item) => item.pages), 1);
+    const maxYearWords = Math.max(...stats.yearly.map((item) => item.words), 1);
     const maxMonthCount = Math.max(
         ...stats.monthly.map((item) => item.count),
         1,
@@ -33,7 +33,7 @@ export default function StatsPage({
                         label: "Books",
                         value: formatNumber(stats.uniqueFinishedBooks),
                     },
-                    { label: "Pages", value: formatNumber(stats.pagesRead) },
+                    { label: "Words", value: formatNumber(stats.wordsRead) },
                     {
                         label: "Rating",
                         value: stats.averageRating
@@ -50,7 +50,7 @@ export default function StatsPage({
                             <CalendarDays size={16} />
                             Yearly
                         </span>
-                        <h2>Yearly pages</h2>
+                        <h2>Yearly words</h2>
                     </div>
                 </div>
                 <div className="panel-list">
@@ -60,13 +60,13 @@ export default function StatsPage({
                             <div>
                                 <i
                                     style={{
-                                        width: `${Math.max(8, (item.pages / maxYearPages) * 100)}%`,
+                                        width: `${Math.max(8, (item.words / maxYearWords) * 100)}%`,
                                     }}
                                 />
                             </div>
                             <strong>
-                                {item.count} books / {formatNumber(item.pages)}{" "}
-                                pages
+                                {item.count} books / {formatNumber(item.words)}{" "}
+                                words
                             </strong>
                         </div>
                     ))}
@@ -113,7 +113,7 @@ export default function StatsPage({
                         <div className="category-card" key={item.category}>
                             <span>{item.category}</span>
                             <strong>{item.books} books</strong>
-                            <p>{formatNumber(item.pages)} pages shelved</p>
+                            <p>{formatNumber(item.words)} words shelved</p>
                         </div>
                     ))}
                 </div>

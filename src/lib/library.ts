@@ -30,12 +30,12 @@ export interface LibraryState {
 export interface LibraryStats {
     finishedEntries: number;
     uniqueFinishedBooks: number;
-    pagesRead: number;
+    wordsRead: number;
     averageRating: number | null;
     yearly: Array<{
         year: string;
         count: number;
-        pages: number;
+        words: number;
     }>;
     monthly: Array<{
         month: string;
@@ -45,7 +45,7 @@ export interface LibraryStats {
     categories: Array<{
         category: string;
         books: number;
-        pages: number;
+        words: number;
     }>;
 }
 
@@ -112,8 +112,9 @@ export function buildStats(
 ): LibraryStats {
     const bookById = new Map(books.map((book) => [book.id, book]));
     const finished = entries.filter((entry) => entry.status === "finished");
-    const pagesRead = finished.reduce(
-        (total, entry) => total + (bookById.get(entry.book_id)?.pages ?? 0),
+    const wordsRead = finished.reduce(
+        (total, entry) =>
+            total + (bookById.get(entry.book_id)?.word_count ?? 0),
         0,
     );
     const ratings = finished
@@ -121,7 +122,7 @@ export function buildStats(
         .filter((rating): rating is number => rating !== null);
     const yearlyMap = new Map<
         string,
-        { year: string; count: number; pages: number }
+        { year: string; count: number; words: number }
     >();
     const monthlyMap = new Map<
         string,
@@ -129,15 +130,15 @@ export function buildStats(
     >();
     const categoryMap = new Map<
         string,
-        { category: string; books: number; pages: number }
+        { category: string; books: number; words: number }
     >();
 
     for (const entry of finished) {
         const book = bookById.get(entry.book_id);
         const year = entryYear(entry);
-        const currentYear = yearlyMap.get(year) ?? { year, count: 0, pages: 0 };
+        const currentYear = yearlyMap.get(year) ?? { year, count: 0, words: 0 };
         currentYear.count += 1;
-        currentYear.pages += book?.pages ?? 0;
+        currentYear.words += book?.word_count ?? 0;
         yearlyMap.set(year, currentYear);
 
         const month = entryMonthKey(entry);
@@ -154,10 +155,10 @@ export function buildStats(
         const current = categoryMap.get(book.category) ?? {
             category: book.category,
             books: 0,
-            pages: 0,
+            words: 0,
         };
         current.books += 1;
-        current.pages += book.pages;
+        current.words += book.word_count;
         categoryMap.set(book.category, current);
     }
 
@@ -165,7 +166,7 @@ export function buildStats(
         finishedEntries: finished.length,
         uniqueFinishedBooks: new Set(finished.map((entry) => entry.book_id))
             .size,
-        pagesRead,
+        wordsRead,
         averageRating: ratings.length
             ? Number(
                   (

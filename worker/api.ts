@@ -235,7 +235,7 @@ function bookPayload(body: JsonRecord) {
         title,
         author: text(body.author),
         sort_order: integer(body.sort_order),
-        pages: Math.max(0, integer(body.pages)),
+        word_count: Math.max(0, integer(body.word_count ?? body.pages)),
         category: text(body.category) || "Fantasy",
         format: text(body.format) || "Novel",
         cover_image_url: text(body.cover_image_url),
@@ -248,19 +248,20 @@ function bookPayload(body: JsonRecord) {
 async function createBook(db: D1Database, body: JsonRecord) {
     const id = makeId("book");
     const payload = bookPayload(body);
+    const author = await resolveBookAuthor(db, payload.series_id, payload.author);
     await db
         .prepare(
             `INSERT INTO books
-        (id, series_id, title, author, sort_order, pages, category, format, cover_image_url, accent_color, publication_year, notes)
+        (id, series_id, title, author, sort_order, word_count, category, format, cover_image_url, accent_color, publication_year, notes)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         )
         .bind(
             id,
             payload.series_id,
             payload.title,
-            payload.author,
+            author,
             payload.sort_order,
-            payload.pages,
+            payload.word_count,
             payload.category,
             payload.format,
             payload.cover_image_url,
@@ -274,6 +275,7 @@ async function createBook(db: D1Database, body: JsonRecord) {
 
 async function updateBook(db: D1Database, id: string, body: JsonRecord) {
     const payload = bookPayload(body);
+    const author = await resolveBookAuthor(db, payload.series_id, payload.author);
     await db
         .prepare(
             `UPDATE books SET
@@ -281,7 +283,7 @@ async function updateBook(db: D1Database, id: string, body: JsonRecord) {
         title = ?,
         author = ?,
         sort_order = ?,
-        pages = ?,
+        word_count = ?,
         category = ?,
         format = ?,
         cover_image_url = ?,
@@ -294,9 +296,9 @@ async function updateBook(db: D1Database, id: string, body: JsonRecord) {
         .bind(
             payload.series_id,
             payload.title,
-            payload.author,
+            author,
             payload.sort_order,
-            payload.pages,
+            payload.word_count,
             payload.category,
             payload.format,
             payload.cover_image_url,
@@ -307,6 +309,22 @@ async function updateBook(db: D1Database, id: string, body: JsonRecord) {
         )
         .run();
     return fetchOne(db, "books", id);
+}
+
+async function resolveBookAuthor(
+    db: D1Database,
+    seriesId: string | null,
+    fallback: string,
+) {
+    if (!seriesId) {
+        return fallback;
+    }
+
+    const series = await db
+        .prepare("SELECT author FROM series WHERE id = ?")
+        .bind(seriesId)
+        .first<{ author: string }>();
+    return series?.author || fallback;
 }
 
 function entryPayload(body: JsonRecord) {
