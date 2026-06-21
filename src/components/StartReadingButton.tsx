@@ -15,9 +15,7 @@ export default function StartReadingButton({
     const reading = isReading(book);
 
     return (
-        <div
-            className={`start-action ${compact ? "compact" : ""} ${reading ? "blocked" : ""}`}
-        >
+        <div className="flex items-center gap-1.5">
             <IconButton
                 label={reading ? "Already reading" : "Start reading"}
                 onClick={() => onStart(book)}

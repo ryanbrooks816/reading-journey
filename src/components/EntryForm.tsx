@@ -59,7 +59,7 @@ export default function EntryForm({
     }
 
     return (
-        <form className="modal-form" onSubmit={submit}>
+        <form onSubmit={submit}>
             <div className="modal-heading">
                 <span className="kicker">
                     <BookMarked size={20} />

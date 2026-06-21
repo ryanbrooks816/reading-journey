@@ -76,7 +76,7 @@ export default function BookForm({
     }
 
     return (
-        <form className="modal-form" onSubmit={submit}>
+        <form onSubmit={submit}>
             <div className="modal-heading">
                 <span>
                     <BookPlus size={20} />

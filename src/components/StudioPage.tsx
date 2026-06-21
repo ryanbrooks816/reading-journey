@@ -92,13 +92,23 @@ export default function StudioPage({
                             <Plus size={16} />
                         </IconButton>
                     </div>
-                    <div className="panel-list">
+                    <div className="grid gap-3">
                         {series.map((item) => (
-                            <article key={item.id}>
-                                <i style={{ background: item.color }} />
+                            <article
+                                className="grid grid-cols-[0.85rem_minmax(0,1fr)_auto_auto] items-center gap-3 rounded-lg border border-[var(--line)] bg-[rgba(255,253,250,0.64)] p-3 max-[520px]:grid-cols-[0.85rem_minmax(0,1fr)_auto] max-[520px]:[&>button:last-child]:col-start-3"
+                                key={item.id}
+                            >
+                                <i
+                                    className="h-full min-h-12 rounded-full"
+                                    style={{ background: item.color }}
+                                />
                                 <div>
-                                    <h3>{item.title}</h3>
-                                    <p>{item.author}</p>
+                                    <h3 className="font-black">
+                                        {item.title}
+                                    </h3>
+                                    <p className="text-sm text-[var(--muted)]">
+                                        {item.author}
+                                    </p>
                                 </div>
                                 <IconButton
                                     label="Edit series"

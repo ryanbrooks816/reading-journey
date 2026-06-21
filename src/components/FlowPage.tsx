@@ -515,7 +515,6 @@ function FlowBookNode({ data }: NodeProps<Node<FlowNodeData>>) {
         >
             <Handle id="target" type="target" position={Position.Left} />
             <Handle id="source" type="source" position={Position.Right} />
-            <span className={`node-state ${state}`} title={stateLabel} />
             <span
                 className={`node-state-glyph ${state}`}
                 aria-label={stateLabel}
@@ -583,7 +582,7 @@ function LibraryPicker({
                 <span>{<Search size={20} />}</span>
                 <h2>Find a book</h2>
             </div>
-            <div className="field-stack">
+            <div className="grid gap-2">
                 <label className="search-field">
                     <Search size={17} />
                     <input
