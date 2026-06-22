@@ -257,6 +257,93 @@ button:disabled {
     font-weight: 760;
 }
 
+.csv-upload-guide {
+    @apply mb-3 grid min-w-0 gap-3 rounded-md border border-[var(--line)] bg-[rgba(255,253,250,0.62)] p-3;
+    color: var(--muted);
+    font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+    font-size: 0.85rem;
+    line-height: 1.55;
+}
+
+.csv-upload-guide section {
+    @apply grid min-w-0 gap-1.5;
+}
+
+.csv-upload-guide .field-label {
+    @apply inline-flex items-center gap-1.5;
+}
+
+.csv-upload-guide p {
+    @apply m-0 min-w-0;
+    overflow-wrap: anywhere;
+}
+
+.csv-upload-guide code,
+.csv-column-list code,
+.csv-series-list code {
+    @apply max-w-full rounded border border-[var(--line)] bg-[rgba(255,255,255,0.56)] px-1.5 py-0.5 text-[0.78rem];
+    color: var(--ink);
+    overflow-wrap: anywhere;
+    white-space: normal;
+}
+
+.csv-column-list {
+    @apply flex min-w-0 flex-wrap gap-1.5;
+}
+
+.csv-upload-guide summary {
+    @apply cursor-pointer font-[820] text-[var(--ink)];
+}
+
+.csv-series-detail {
+    @apply min-w-0;
+}
+
+.csv-series-list {
+    @apply mt-2 grid max-h-40 gap-1 overflow-y-auto pr-1;
+}
+
+.csv-series-list span {
+    @apply flex min-w-0 flex-wrap items-center justify-between gap-2 rounded border border-[var(--line)] bg-[rgba(255,255,255,0.42)] px-2 py-1;
+}
+
+.csv-series-list strong {
+    @apply min-w-0;
+    overflow-wrap: anywhere;
+}
+
+.csv-series-list em {
+    @apply min-w-0 font-sans text-[0.78rem] not-italic text-[var(--muted)];
+    overflow-wrap: anywhere;
+}
+
+.csv-file-drop {
+    @apply relative mb-2 flex min-h-14 min-w-0 cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed border-[var(--line-strong)] bg-[rgba(255,253,250,0.76)] px-3 py-3 font-sans text-[0.9rem] font-[820] text-[var(--ink)];
+}
+
+.csv-file-drop span {
+    @apply min-w-0;
+    overflow-wrap: anywhere;
+}
+
+.csv-file-drop input {
+    @apply absolute inset-0 cursor-pointer opacity-0;
+}
+
+.csv-preview {
+    @apply mt-3 grid min-w-0 gap-1 rounded-md border border-[var(--line)] bg-[rgba(233,243,232,0.72)] px-3 py-2 font-sans text-[0.86rem];
+}
+
+.csv-preview strong {
+    @apply inline-flex min-w-0 items-center gap-1.5;
+    color: var(--ink);
+}
+
+.csv-preview span {
+    color: var(--muted);
+    overflow-wrap: anywhere;
+}
+
 .form-intro,
 .confirm-panel > p {
     margin-bottom: 1rem;
@@ -276,6 +363,17 @@ button:disabled {
     font-size: 0.82rem;
     font-weight: 800;
     line-height: 1.35;
+}
+
+.form-alert.error {
+    border-color: rgba(163, 66, 54, 0.24);
+    background: rgba(255, 238, 234, 0.82);
+    color: var(--rust);
+}
+
+.form-alert span {
+    min-width: 0;
+    overflow-wrap: anywhere;
 }
 
 .swatches button {

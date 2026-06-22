@@ -62,6 +62,7 @@ export interface ReadingEntry {
 
 export type ModalState =
     | { type: "book"; book?: Book }
+    | { type: "bookBulk" }
     | { type: "series"; series?: Series }
     | { type: "entry"; entry?: ReadingEntry; bookId?: string };
 

@@ -28,6 +28,7 @@ import Modal from "./components/Modal";
 import ConfirmPanel from "./components/ConfirmPanel";
 import SeriesForm from "./components/SeriesForm";
 import BookForm from "./components/BookForm";
+import BookCsvUploadForm from "./components/BookCsvUploadForm";
 import EntryForm from "./components/EntryForm";
 import FlowPage from "./components/FlowPage";
 import { snapFlowPosition } from "./components/FlowPage";
@@ -113,7 +114,10 @@ export default function App() {
 
     // Endpoints
 
-    async function mutate(operation: () => Promise<unknown>) {
+    async function mutate(
+        operation: () => Promise<unknown>,
+        options: { throwOnError?: boolean } = {},
+    ) {
         setSaving(true);
         setError("");
         try {
@@ -121,9 +125,12 @@ export default function App() {
             await refresh();
             setModal(null);
         } catch (err) {
-            setError(
-                err instanceof Error ? err.message : "Unable to save changes.",
-            );
+            const message =
+                err instanceof Error ? err.message : "Unable to save changes.";
+            setError(message);
+            if (options.throwOnError) {
+                throw new Error(message);
+            }
         } finally {
             setSaving(false);
         }
@@ -456,6 +463,9 @@ export default function App() {
                                     selectedBook={selectedBook}
                                     onSelectBook={setSelectedBookId}
                                     onAddBook={() => setModal({ type: "book" })}
+                                    onBulkUpload={() =>
+                                        setModal({ type: "bookBulk" })
+                                    }
                                     onEditBook={(book: Book) =>
                                         setModal({ type: "book", book })
                                     }
@@ -583,6 +593,35 @@ export default function App() {
                                         });
                                         return book;
                                     })
+                                }
+                            />
+                        ) : null}
+
+                        {modal.type === "bookBulk" ? (
+                            <BookCsvUploadForm
+                                series={libraryState.series}
+                                saving={saving}
+                                onCancel={() => setModal(null)}
+                                onSubmit={(rows) =>
+                                    mutate(
+                                        async () => {
+                                            const result =
+                                                await libraryApi.createBooksBulk(
+                                                    rows,
+                                                );
+                                            showToast({
+                                                title: "Books uploaded",
+                                                detail: `${result.count} books were added to your library.`,
+                                                tone: "success",
+                                                action: {
+                                                    label: "View library",
+                                                    view: "library",
+                                                },
+                                            });
+                                            return result;
+                                        },
+                                        { throwOnError: true },
+                                    )
                                 }
                             />
                         ) : null}

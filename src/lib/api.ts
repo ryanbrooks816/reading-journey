@@ -5,6 +5,27 @@ type RequestOptions = Omit<RequestInit, "body"> & {
     body?: unknown;
 };
 
+export type BookUploadRow = Partial<
+    Pick<
+        Book,
+        | "series_id"
+        | "title"
+        | "author"
+        | "sort_order"
+        | "word_count"
+        | "category"
+        | "format"
+        | "cover_image_url"
+        | "accent_color"
+        | "publication_year"
+        | "notes"
+    >
+> & {
+    pages?: number | string;
+    series?: string;
+    series_name?: string;
+};
+
 async function request<T>(
     path: string,
     options: RequestOptions = {},
@@ -48,6 +69,12 @@ export const libraryApi = {
 
     createBook: (body: Partial<Book>) =>
         request<Book>("/books", { method: "POST", body }),
+
+    createBooksBulk: (books: BookUploadRow[]) =>
+        request<{ count: number; books: Book[] }>("/books/bulk", {
+            method: "POST",
+            body: { books },
+        }),
 
     updateBook: (id: string, body: Partial<Book>) =>
         request<Book>(`/books/${id}`, { method: "PUT", body }),

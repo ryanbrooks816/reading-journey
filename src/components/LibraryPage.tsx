@@ -1,4 +1,10 @@
-import { BookOpen, Plus, Search, SlidersHorizontal } from "lucide-react";
+import {
+    BookOpen,
+    FileSpreadsheet,
+    Plus,
+    Search,
+    SlidersHorizontal,
+} from "lucide-react";
 import { useState } from "react";
 import type { Book, BookWithMeta, ReadingEntry, Series } from "../lib/types";
 import { PageHero } from "./PageHero";
@@ -12,6 +18,7 @@ export default function LibraryPage({
     selectedBook,
     onSelectBook,
     onAddBook,
+    onBulkUpload,
     onEditBook,
     onDeleteBook,
     onStart,
@@ -25,6 +32,7 @@ export default function LibraryPage({
     selectedBook?: BookWithMeta;
     onSelectBook: (id: string) => void;
     onAddBook: () => void;
+    onBulkUpload: () => void;
     onEditBook: (book: Book) => void;
     onDeleteBook: (id: string) => void;
     onStart: (book: BookWithMeta) => void;
@@ -60,9 +68,14 @@ export default function LibraryPage({
                 kicker="Library"
                 title="Library"
                 actions={
-                    <IconButton label="Book" onClick={onAddBook}>
-                        <Plus size={16} />
-                    </IconButton>
+                    <>
+                        <IconButton label="CSV" onClick={onBulkUpload}>
+                            <FileSpreadsheet size={16} />
+                        </IconButton>
+                        <IconButton label="Book" onClick={onAddBook}>
+                            <Plus size={16} />
+                        </IconButton>
+                    </>
                 }
             />
 

@@ -49,6 +49,9 @@ export async function routeRequest(
         if (request.method === "POST" && !id) {
             return json(await createBook(db, await readBody(request)), 201);
         }
+        if (request.method === "POST" && id === "bulk") {
+            return json(await createBooksBulk(db, await readBody(request)), 201);
+        }
         if (request.method === "PUT" && id) {
             return json(await updateBook(db, id, await readBody(request)));
         }
@@ -232,6 +235,7 @@ function bookPayload(body: JsonRecord) {
 
     return {
         series_id: nullableText(body.series_id),
+        series_name: nullableText(body.series_name ?? body.series),
         title,
         author: text(body.author),
         sort_order: integer(body.sort_order),
@@ -247,9 +251,110 @@ function bookPayload(body: JsonRecord) {
 
 async function createBook(db: D1Database, body: JsonRecord) {
     const id = makeId("book");
-    const payload = bookPayload(body);
+    const payload = await resolveBookPayload(db, bookPayload(body));
     const author = await resolveBookAuthor(db, payload.series_id, payload.author);
-    await db
+    await prepareBookInsert(db, id, payload, author).run();
+    return fetchOne(db, "books", id);
+}
+
+async function createBooksBulk(db: D1Database, body: JsonRecord) {
+    const rows = body.books;
+    if (!Array.isArray(rows) || rows.length === 0) {
+        throw new ApiError(400, "Upload at least one book row.");
+    }
+
+    const inserts: D1PreparedStatement[] = [];
+    const ids: string[] = [];
+
+    for (const [index, row] of rows.entries()) {
+        if (!row || typeof row !== "object" || Array.isArray(row)) {
+            throw new ApiError(400, `Row ${index + 2}: Expected a book object.`);
+        }
+
+        try {
+            const id = makeId("book");
+            const payload = await resolveBookPayload(
+                db,
+                bookPayload(row as JsonRecord),
+            );
+            const author = await resolveBookAuthor(
+                db,
+                payload.series_id,
+                payload.author,
+            );
+            ids.push(id);
+            inserts.push(prepareBookInsert(db, id, payload, author));
+        } catch (error) {
+            if (error instanceof ApiError) {
+                throw new ApiError(400, `Row ${index + 2}: ${error.message}`);
+            }
+            throw error;
+        }
+    }
+
+    await db.batch(inserts);
+    const books = await Promise.all(ids.map((id) => fetchOne(db, "books", id)));
+
+    return { count: books.length, books };
+}
+
+async function resolveBookPayload(
+    db: D1Database,
+    payload: ReturnType<typeof bookPayload>,
+) {
+    const seriesId = await resolveBookSeriesId(
+        db,
+        payload.series_id,
+        payload.series_name,
+    );
+    return { ...payload, series_id: seriesId };
+}
+
+async function resolveBookSeriesId(
+    db: D1Database,
+    seriesId: string | null,
+    seriesName: string | null,
+) {
+    if (seriesId && seriesName) {
+        throw new ApiError(400, "Use series_name or series_id, not both.");
+    }
+    if (seriesId) {
+        const series = await db
+            .prepare("SELECT id FROM series WHERE id = ?")
+            .bind(seriesId)
+            .first<{ id: string }>();
+        if (!series) {
+            throw new ApiError(400, "Selected series was not found.");
+        }
+        return series.id;
+    }
+    if (!seriesName) {
+        return null;
+    }
+
+    const matches = await db
+        .prepare("SELECT id FROM series WHERE LOWER(title) = LOWER(?)")
+        .bind(seriesName)
+        .all<{ id: string }>();
+    if (matches.results.length === 0) {
+        throw new ApiError(400, `Series "${seriesName}" was not found.`);
+    }
+    if (matches.results.length > 1) {
+        throw new ApiError(
+            400,
+            `Series "${seriesName}" matches more than one series.`,
+        );
+    }
+    return matches.results[0].id;
+}
+
+function prepareBookInsert(
+    db: D1Database,
+    id: string,
+    payload: Awaited<ReturnType<typeof resolveBookPayload>>,
+    author: string,
+) {
+    return db
         .prepare(
             `INSERT INTO books
         (id, series_id, title, author, sort_order, word_count, category, format, cover_image_url, accent_color, publication_year, notes)
@@ -268,13 +373,11 @@ async function createBook(db: D1Database, body: JsonRecord) {
             payload.accent_color,
             payload.publication_year,
             payload.notes,
-        )
-        .run();
-    return fetchOne(db, "books", id);
+        );
 }
 
 async function updateBook(db: D1Database, id: string, body: JsonRecord) {
-    const payload = bookPayload(body);
+    const payload = await resolveBookPayload(db, bookPayload(body));
     const author = await resolveBookAuthor(db, payload.series_id, payload.author);
     await db
         .prepare(
@@ -324,6 +427,9 @@ async function resolveBookAuthor(
         .prepare("SELECT author FROM series WHERE id = ?")
         .bind(seriesId)
         .first<{ author: string }>();
+    if (!series) {
+        throw new ApiError(400, "Selected series was not found.");
+    }
     return series?.author || fallback;
 }
 
