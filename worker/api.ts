@@ -135,7 +135,15 @@ async function getState(db: D1Database) {
             .all(),
         db
             .prepare(
-                "SELECT * FROM books ORDER BY COALESCE(series_id, ''), sort_order ASC, title ASC",
+                `SELECT books.* FROM books
+        LEFT JOIN series ON series.id = books.series_id
+        ORDER BY
+          COALESCE(series.sort_order, 9999) ASC,
+          CASE WHEN books.series_id IS NULL THEN 1 ELSE 0 END ASC,
+          COALESCE(series.title, '') ASC,
+          COALESCE(series.id, '') ASC,
+          books.sort_order ASC,
+          books.title ASC`,
             )
             .all(),
         db
@@ -252,8 +260,7 @@ function bookPayload(body: JsonRecord) {
 async function createBook(db: D1Database, body: JsonRecord) {
     const id = makeId("book");
     const payload = await resolveBookPayload(db, bookPayload(body));
-    const author = await resolveBookAuthor(db, payload.series_id, payload.author);
-    await prepareBookInsert(db, id, payload, author).run();
+    await prepareBookInsert(db, id, payload).run();
     return fetchOne(db, "books", id);
 }
 
@@ -277,13 +284,8 @@ async function createBooksBulk(db: D1Database, body: JsonRecord) {
                 db,
                 bookPayload(row as JsonRecord),
             );
-            const author = await resolveBookAuthor(
-                db,
-                payload.series_id,
-                payload.author,
-            );
             ids.push(id);
-            inserts.push(prepareBookInsert(db, id, payload, author));
+            inserts.push(prepareBookInsert(db, id, payload));
         } catch (error) {
             if (error instanceof ApiError) {
                 throw new ApiError(400, `Row ${index + 2}: ${error.message}`);
@@ -307,7 +309,23 @@ async function resolveBookPayload(
         payload.series_id,
         payload.series_name,
     );
-    return { ...payload, series_id: seriesId };
+    if (!seriesId) {
+        return { ...payload, series_id: null };
+    }
+
+    const series = await db
+        .prepare("SELECT author, color FROM series WHERE id = ?")
+        .bind(seriesId)
+        .first<{ author: string; color: string }>();
+    if (!series) {
+        throw new ApiError(400, "Selected series was not found.");
+    }
+    return {
+        ...payload,
+        series_id: seriesId,
+        author: series.author || payload.author,
+        accent_color: series.color || payload.accent_color,
+    };
 }
 
 async function resolveBookSeriesId(
@@ -352,7 +370,6 @@ function prepareBookInsert(
     db: D1Database,
     id: string,
     payload: Awaited<ReturnType<typeof resolveBookPayload>>,
-    author: string,
 ) {
     return db
         .prepare(
@@ -364,7 +381,7 @@ function prepareBookInsert(
             id,
             payload.series_id,
             payload.title,
-            author,
+            payload.author,
             payload.sort_order,
             payload.word_count,
             payload.category,
@@ -378,7 +395,6 @@ function prepareBookInsert(
 
 async function updateBook(db: D1Database, id: string, body: JsonRecord) {
     const payload = await resolveBookPayload(db, bookPayload(body));
-    const author = await resolveBookAuthor(db, payload.series_id, payload.author);
     await db
         .prepare(
             `UPDATE books SET
@@ -399,7 +415,7 @@ async function updateBook(db: D1Database, id: string, body: JsonRecord) {
         .bind(
             payload.series_id,
             payload.title,
-            author,
+            payload.author,
             payload.sort_order,
             payload.word_count,
             payload.category,
@@ -412,25 +428,6 @@ async function updateBook(db: D1Database, id: string, body: JsonRecord) {
         )
         .run();
     return fetchOne(db, "books", id);
-}
-
-async function resolveBookAuthor(
-    db: D1Database,
-    seriesId: string | null,
-    fallback: string,
-) {
-    if (!seriesId) {
-        return fallback;
-    }
-
-    const series = await db
-        .prepare("SELECT author FROM series WHERE id = ?")
-        .bind(seriesId)
-        .first<{ author: string }>();
-    if (!series) {
-        throw new ApiError(400, "Selected series was not found.");
-    }
-    return series?.author || fallback;
 }
 
 function entryPayload(body: JsonRecord) {

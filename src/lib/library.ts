@@ -75,9 +75,13 @@ export function buildLibrary(state: LibraryState) {
                     entrySortValue(b) - entrySortValue(a) ||
                     b.entry_order - a.entry_order,
             );
+        const series = book.series_id
+            ? seriesById.get(book.series_id)
+            : undefined;
         return {
             ...book,
-            series: book.series_id ? seriesById.get(book.series_id) : undefined,
+            accent_color: series?.color ?? book.accent_color,
+            series,
             entries,
             readCount: entries.filter((entry) => entry.status === "finished")
                 .length,
@@ -89,8 +93,13 @@ export function buildLibrary(state: LibraryState) {
     books.sort((a, b) => {
         const seriesA = a.series?.sort_order ?? 9999;
         const seriesB = b.series?.sort_order ?? 9999;
+        const standaloneA = a.series ? 0 : 1;
+        const standaloneB = b.series ? 0 : 1;
         return (
             seriesA - seriesB ||
+            standaloneA - standaloneB ||
+            (a.series?.title ?? "").localeCompare(b.series?.title ?? "") ||
+            (a.series?.id ?? "").localeCompare(b.series?.id ?? "") ||
             a.sort_order - b.sort_order ||
             a.title.localeCompare(b.title)
         );
