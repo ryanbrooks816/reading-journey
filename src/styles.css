@@ -983,6 +983,36 @@ blockquote {
     background: var(--user-accent);
     opacity: 0.88;
     box-shadow: 0 0 0 1px rgba(68, 48, 25, 0.22);
+    z-index: 5;
+}
+
+.journey-flow-canvas .react-flow__handle-left {
+    left: -0.38rem;
+}
+
+.journey-flow-canvas .react-flow__handle-right {
+    right: -0.38rem;
+}
+
+.journey-flow-canvas .react-flow__handle:hover,
+.journey-flow-canvas .react-flow__handle.connectingfrom,
+.journey-flow-canvas .react-flow__handle.connectingto {
+    opacity: 1;
+    box-shadow:
+        0 0 0 2px color-mix(in srgb, var(--user-accent) 20%, transparent),
+        0 0 0 1px rgba(68, 48, 25, 0.22);
+}
+
+.journey-flow-canvas .react-flow__handle-left:hover,
+.journey-flow-canvas .react-flow__handle-left.connectingfrom,
+.journey-flow-canvas .react-flow__handle-left.connectingto {
+    transform: translate(-50%, -50%) scale(1.16);
+}
+
+.journey-flow-canvas .react-flow__handle-right:hover,
+.journey-flow-canvas .react-flow__handle-right.connectingfrom,
+.journey-flow-canvas .react-flow__handle-right.connectingto {
+    transform: translate(50%, -50%) scale(1.16);
 }
 
 .journey-flow-canvas .react-flow__edge-path {
@@ -1003,6 +1033,9 @@ blockquote {
 .journey-flow-canvas .react-flow__controls {
     display: flex;
     flex-direction: row;
+    bottom: 1rem;
+    left: 50%;
+    transform: translateX(-50%);
     overflow: hidden;
     border: 1px solid rgba(68, 48, 25, 0.12);
     border-radius: 8px;
@@ -1018,6 +1051,19 @@ blockquote {
     color: var(--ink);
 }
 
+.journey-flow-canvas .react-flow__controls-button:last-child {
+    border-right: 0;
+}
+
+.journey-flow-canvas .react-flow__controls-button:hover {
+    background: rgba(141, 59, 70, 0.08);
+}
+
+.journey-flow-canvas .react-flow__controls-button svg {
+    max-width: 1rem;
+    max-height: 1rem;
+}
+
 .journey-node {
     position: relative;
     display: grid;
@@ -1026,7 +1072,7 @@ blockquote {
     gap: 0.52rem 0.72rem;
     width: 280px;
     min-height: 126px;
-    overflow: hidden;
+    overflow: visible;
     border: 1px solid rgba(68, 48, 25, 0.15);
     border-left: 4px solid var(--accent);
     border-radius: 8px;
