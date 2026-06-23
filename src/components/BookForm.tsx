@@ -37,12 +37,14 @@ export default function BookForm({
         error: "",
     });
     const selectedSeries = series.find((item) => item.id === form.series_id);
+    const accentColor = selectedSeries?.color ?? form.accent_color;
 
     function submit(event: FormEvent) {
         event.preventDefault();
         onSubmit({
             ...form,
             author: selectedSeries?.author || form.author,
+            accent_color: accentColor,
             publication_year: form.publication_year
                 ? Number(form.publication_year)
                 : null,
@@ -123,6 +125,8 @@ export default function BookForm({
                                 ...form,
                                 series_id: event.target.value,
                                 author: selectedSeries?.author ?? form.author,
+                                accent_color:
+                                    selectedSeries?.color ?? form.accent_color,
                             });
                         }}
                     >
@@ -196,13 +200,14 @@ export default function BookForm({
                     <span>Accent</span>
                     <input
                         type="color"
-                        value={form.accent_color}
+                        value={accentColor}
                         onChange={(event) =>
                             setForm({
                                 ...form,
                                 accent_color: event.target.value,
                             })
                         }
+                        disabled={Boolean(selectedSeries)}
                     />
                 </label>
                 <label className="two-span">
@@ -227,7 +232,7 @@ export default function BookForm({
                                 book={{
                                     title: form.title || "Cover preview",
                                     cover_image_url: form.cover_image_url,
-                                    accent_color: form.accent_color,
+                                    accent_color: accentColor,
                                 }}
                                 scale={0.46}
                             />

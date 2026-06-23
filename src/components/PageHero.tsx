@@ -32,7 +32,9 @@ export function PageHero({
                     {title}
                 </h2>
             </div>
-            {metrics?.length ? <MetricStrip metrics={metrics} /> : actions}
+            <div className={`gap-2 flex`}>
+                {metrics?.length ? <MetricStrip metrics={metrics} /> : actions}
+            </div>
         </section>
     );
 }
