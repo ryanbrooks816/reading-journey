@@ -261,19 +261,27 @@ export default function App() {
         });
     }
 
-    async function addFlowNode(book: BookWithMeta, allowDuplicate = false) {
+    async function addFlowNode(
+        book: BookWithMeta,
+        options: {
+            allowDuplicate?: boolean;
+            position?: { x: number; y: number };
+        } = {},
+    ) {
         if (
-            !allowDuplicate &&
+            !options.allowDuplicate &&
             libraryState.flowNodes.some((node) => node.book_id === book.id)
         ) {
             setDuplicateFlowBook(book);
             return;
         }
 
-        const position = snapFlowPosition({
-            x: 128 + (libraryState.flowNodes.length % 5) * 320,
-            y: 128 + Math.floor(libraryState.flowNodes.length / 5) * 192,
-        });
+        const position =
+            options.position ??
+            snapFlowPosition({
+                x: 128 + (libraryState.flowNodes.length % 5) * 320,
+                y: 128 + Math.floor(libraryState.flowNodes.length / 5) * 192,
+            });
 
         await mutate(async () => {
             const node = await libraryApi.createFlowNode({
@@ -729,7 +737,9 @@ export default function App() {
                             saving={saving}
                             onCancel={() => setDuplicateFlowBook(null)}
                             onConfirm={() =>
-                                addFlowNode(duplicateFlowBook, true)
+                                addFlowNode(duplicateFlowBook, {
+                                    allowDuplicate: true,
+                                })
                             }
                         />
                     </Modal>

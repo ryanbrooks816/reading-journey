@@ -1064,6 +1064,33 @@ blockquote {
     max-height: 1rem;
 }
 
+.flow-grid-toggle {
+    position: absolute;
+    left: 0.85rem;
+    top: 0.85rem;
+    z-index: 6;
+    border: 1px solid rgba(68, 48, 25, 0.14);
+    border-radius: 8px;
+    background: rgba(255, 250, 240, 0.9);
+    box-shadow: 0 12px 24px rgba(43, 31, 18, 0.1);
+}
+
+.flow-grid-toggle label {
+    display: flex;
+    min-height: 2rem;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.34rem 0.62rem;
+    color: var(--ink);
+    font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+    font-size: 0.72rem;
+    font-weight: 820;
+}
+
+.flow-grid-toggle input {
+    accent-color: var(--user-accent);
+}
+
 .journey-node {
     position: relative;
     display: grid;
@@ -1268,7 +1295,7 @@ blockquote {
 }
 
 .tray-actions {
-    @apply flex justify-stretch;
+    @apply flex gap-2 flex-wrap flex-col grow;
 }
 
 .tray-panel h3 {
@@ -1284,6 +1311,81 @@ blockquote {
 
 .journey-candidates::-webkit-scrollbar {
     display: none;
+}
+
+.series-candidate {
+    display: grid;
+    gap: 0.35rem;
+}
+
+.series-candidate-nav {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.5rem;
+    padding-inline: 0.12rem;
+}
+
+.series-candidate-nav span {
+    min-width: 0;
+    overflow: hidden;
+    color: var(--muted);
+    font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+    font-size: 0.66rem;
+    font-weight: 820;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.series-candidate-nav div {
+    display: flex;
+    gap: 0.25rem;
+}
+
+.series-candidate-nav .icon-button {
+    min-height: 1.85rem;
+    min-width: 0;
+    width: 1.95rem;
+    padding-inline: 0;
+}
+
+.series-candidate-nav .icon-button span {
+    display: none;
+}
+
+.series-candidate .book-list-item {
+    min-width: 0;
+    grid-template-columns: 46px minmax(0, 1fr) auto;
+    padding: 0.45rem;
+}
+
+.series-candidate .book-list-cover .book-cover {
+    width: 42px;
+    min-width: 42px;
+    max-width: 42px;
+}
+
+.series-candidate .book-list-copy h3 {
+    font-size: 0.9rem;
+}
+
+.series-candidate .book-list-copy p {
+    white-space: normal;
+}
+
+.show-more-button {
+    min-height: 2.55rem;
+    border: 1px solid rgba(68, 48, 25, 0.16);
+    border-radius: 8px;
+    background: rgba(255, 253, 247, 0.66);
+    color: var(--ink);
+    font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+    font-size: 0.74rem;
+    font-weight: 850;
+}
+
+.show-more-button:hover {
+    background: rgba(141, 59, 70, 0.08);
 }
 
 .route-empty {

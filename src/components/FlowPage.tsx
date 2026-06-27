@@ -1,6 +1,7 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import {
     Background,
+    BackgroundVariant,
     type Connection,
     Controls,
     Handle,
@@ -14,7 +15,10 @@ import {
     type OnNodeDrag,
 } from "@xyflow/react";
 import {
+    AlignHorizontalJustifyCenter,
     Check,
+    ChevronLeft,
+    ChevronRight,
     ListPlus,
     Map as MapIcon,
     Play,
@@ -65,15 +69,29 @@ export default function FlowPage({
     stats: LibraryStats;
     onSelectBook: (id: string) => void;
     onStart: (book: BookWithMeta) => void;
-    onAddFlowNode: (book: BookWithMeta) => void;
+    onAddFlowNode: (
+        book: BookWithMeta,
+        options?: { position?: { x: number; y: number } },
+    ) => void;
     onUpdateFlowNodePosition: (
         id: string,
         position: { x: number; y: number },
     ) => void;
+    onUpdateFlowNodeLabel: (id: string, label: string) => void;
     onAddFlowEdge: (sourceId: string, targetId: string) => void;
     onDeleteFlowEdge: (id: string) => void;
+    onDeleteFlowNode: (id: string) => void;
 }) {
     const [pickerOpen, setPickerOpen] = useState(false);
+    const [gridVisible, setGridVisible] = useState(true);
+    const [viewport, setViewport] = useState(DEFAULT_VIEWPORT);
+    const [selectedEdgeIds, setSelectedEdgeIds] = useState<string[]>([]);
+    const [visibleSuggestions, setVisibleSuggestions] =
+        useState(SUGGESTION_PAGE_SIZE);
+    const [seriesBookIndexes, setSeriesBookIndexes] = useState<
+        Record<string, number>
+    >({});
+    const flowCanvasRef = useRef<HTMLDivElement>(null);
 
     const bookById = useMemo(
         () => new Map(books.map((book) => [book.id, book])),
@@ -221,36 +239,141 @@ export default function FlowPage({
         [onUpdateFlowNodePosition],
     );
 
-    const unreadSuggestions = series
-        .map((item) => {
-            const seriesBooks = books
-                .filter((book) => book.series_id === item.id)
-                .sort((a, b) => a.sort_order - b.sort_order);
-            return seriesBooks.find((book) => book.readCount === 0);
-        })
-        .filter((book): book is BookWithMeta => Boolean(book));
-    const rereadSuggestions = books
-        .filter((book) => book.readCount > 0)
-        .filter(
-            (book, index, all) =>
-                all.findIndex((item) => item.series_id === book.series_id) ===
-                index,
-        )
-        .slice(0, 4);
-    const suggestedNext = [...unreadSuggestions, ...rereadSuggestions]
-        .filter(
-            (book, index, all) =>
-                all.findIndex((item) => item.id === book.id) === index,
-        )
-        .slice(0, 10);
-    const seriesGroups = series
-        .map((item) => ({
-            series: item,
-            books: books
-                .filter((book) => book.series_id === item.id)
-                .sort((a, b) => a.sort_order - b.sort_order),
-        }))
-        .filter((group) => group.books.length > 0);
+    const handleSelectionChange = useCallback(
+        ({ edges: selectedEdges }: { edges: Edge[] }) => {
+            const nextIds = selectedEdges.map((edge) => edge.id);
+            setSelectedEdgeIds((current) => {
+                if (
+                    current.length === nextIds.length &&
+                    current.every((id, index) => id === nextIds[index])
+                ) {
+                    return current;
+                }
+                return nextIds;
+            });
+        },
+        [],
+    );
+
+    const handleMoveEnd = useCallback(
+        (
+            _event: MouseEvent | TouchEvent | null,
+            nextViewport: typeof viewport,
+        ) => {
+            setViewport((current) =>
+                current.x === nextViewport.x &&
+                current.y === nextViewport.y &&
+                current.zoom === nextViewport.zoom
+                    ? current
+                    : nextViewport,
+            );
+        },
+        [],
+    );
+
+    const getViewportCenterPosition = useCallback(() => {
+        const bounds = flowCanvasRef.current?.getBoundingClientRect();
+        if (!bounds) {
+            return undefined;
+        }
+
+        return snapFlowPosition({
+            x: (bounds.width / 2 - viewport.x) / viewport.zoom,
+            y: (bounds.height / 2 - viewport.y) / viewport.zoom,
+        });
+    }, [viewport]);
+
+    const handleAddFlowNode = useCallback(
+        (book: BookWithMeta) => {
+            onAddFlowNode(book, { position: getViewportCenterPosition() });
+        },
+        [getViewportCenterPosition, onAddFlowNode],
+    );
+
+    const seriesGroups = useMemo(
+        () =>
+            series
+                .map((item) => ({
+                    series: item,
+                    books: books
+                        .filter((book) => book.series_id === item.id)
+                        .sort(
+                            (a, b) =>
+                                a.sort_order - b.sort_order ||
+                                a.title.localeCompare(b.title),
+                        ),
+                }))
+                .filter((group) => group.books.length > 0),
+        [books, series],
+    );
+    const suggestionItems = useMemo(() => {
+        const items: SuggestionItem[] = [
+            ...seriesGroups.map((group) => ({
+                type: "series" as const,
+                id: group.series.id,
+                title: group.series.title,
+                books: group.books,
+                series: group.series,
+            })),
+            ...books
+                .filter((book) => !book.series_id)
+                .map((book) => ({
+                    type: "standalone" as const,
+                    id: book.id,
+                    title: book.title,
+                    book,
+                })),
+        ];
+
+        return items.sort(
+            (a, b) =>
+                a.title.localeCompare(b.title) || a.id.localeCompare(b.id),
+        );
+    }, [books, seriesGroups]);
+    const visibleSuggestionItems = suggestionItems.slice(0, visibleSuggestions);
+
+    useEffect(() => {
+        setVisibleSuggestions((current) =>
+            Math.min(
+                Math.max(SUGGESTION_PAGE_SIZE, current),
+                suggestionItems.length,
+            ),
+        );
+    }, [suggestionItems.length]);
+
+    const getDefaultSeriesBookIndex = useCallback(
+        (group: SeriesSuggestionItem) => {
+            const unreadIndex = group.books.findIndex(
+                (book) => book.readCount === 0 && !activeBookIds.has(book.id),
+            );
+            if (unreadIndex >= 0) {
+                return unreadIndex;
+            }
+            const readingIndex = group.books.findIndex((book) =>
+                activeBookIds.has(book.id),
+            );
+            if (readingIndex >= 0) {
+                return readingIndex;
+            }
+            return Math.max(0, group.books.length - 1);
+        },
+        [activeBookIds],
+    );
+
+    const tidyFlowChart = useCallback(() => {
+        const tidyPositions = alignFlowPositions(flowNodes);
+
+        flowNodes.forEach((node) => {
+            const position = tidyPositions.get(node.id);
+            if (
+                position &&
+                (position.x !== node.position_x ||
+                    position.y !== node.position_y)
+            ) {
+                onUpdateFlowNodePosition(node.id, position);
+            }
+        });
+    }, [flowNodes, onUpdateFlowNodePosition]);
 
     return (
         <div className="flow-page chart-mode">
@@ -271,7 +394,7 @@ export default function FlowPage({
 
             <div className="journey-chart-layout">
                 <section className="journey-chart-panel">
-                    <div className="journey-flow-canvas">
+                    <div className="journey-flow-canvas" ref={flowCanvasRef}>
                         {nodes.length ? (
                             <ReactFlow
                                 nodes={nodes}
@@ -303,16 +426,34 @@ export default function FlowPage({
                                 nodesDraggable
                                 nodesConnectable
                                 elementsSelectable
-                                deleteKeyCode={["Backspace", "Delete"]}
+                                deleteKeyCode={null}
                             >
+                                <div className="flow-grid-toggle">
+                                    <label>
+                                        <input
+                                            checked={gridVisible}
+                                            onChange={(event) =>
+                                                setGridVisible(
+                                                    event.target.checked,
+                                                )
+                                            }
+                                            type="checkbox"
+                                        />
+                                        Grid
+                                    </label>
+                                </div>
                                 <Controls
                                     position="bottom-center"
                                     showInteractive={false}
                                 />
-                                <Background
-                                    color="rgba(60, 45, 32, 0.18)"
-                                    gap={34}
-                                />
+                                {gridVisible ? (
+                                    <Background
+                                        color="rgba(60, 45, 32, 0.1)"
+                                        gap={FLOW_GRID[0]}
+                                        lineWidth={1}
+                                        variant={BackgroundVariant.Lines}
+                                    />
+                                ) : null}
                             </ReactFlow>
                         ) : (
                             <button
@@ -336,6 +477,14 @@ export default function FlowPage({
                         >
                             <Search size={16} />
                         </IconButton>
+                        <IconButton
+                            label="Tidy chart"
+                            onClick={tidyFlowChart}
+                            className="w-full"
+                            disabled={!flowNodes.length}
+                        >
+                            <AlignHorizontalJustifyCenter size={16} />
+                        </IconButton>
                     </section>
 
                     <section className="tray-panel">
@@ -344,30 +493,144 @@ export default function FlowPage({
                             <h3>Likely next reads</h3>
                         </div>
                         <div className="journey-candidates">
-                            {suggestedNext.map((book) => (
-                                <BookListItem
-                                    key={book.id}
-                                    book={book}
-                                    meta={`${book.series?.title ?? "Standalone"} · ${book.readCount ? "reread" : "next unread"}`}
-                                    onSelect={onSelectBook}
-                                    actions={
-                                        <>
-                                            <IconButton
-                                                label="Add to chart"
-                                                onClick={() =>
-                                                    onAddFlowNode(book)
-                                                }
-                                            >
-                                                <ListPlus size={15} />
-                                            </IconButton>
-                                            <StartReadingButton
-                                                book={book}
-                                                onStart={onStart}
-                                            />
-                                        </>
+                            {visibleSuggestionItems.map((item) => {
+                                if (item.type === "standalone") {
+                                    const standaloneState = activeBookIds.has(
+                                        item.book.id,
+                                    )
+                                        ? "reading"
+                                        : item.book.readCount
+                                          ? "read"
+                                          : "unread";
+                                    return (
+                                        <BookListItem
+                                            key={item.id}
+                                            book={item.book}
+                                            meta={`Standalone · ${standaloneState}`}
+                                            onSelect={onSelectBook}
+                                            actions={
+                                                <>
+                                                    <IconButton
+                                                        label="Add to chart"
+                                                        onClick={() =>
+                                                            handleAddFlowNode(
+                                                                item.book,
+                                                            )
+                                                        }
+                                                    >
+                                                        <ListPlus size={15} />
+                                                    </IconButton>
+                                                    <StartReadingButton
+                                                        book={item.book}
+                                                        onStart={onStart}
+                                                    />
+                                                </>
+                                            }
+                                        />
+                                    );
+                                }
+
+                                const index =
+                                    seriesBookIndexes[item.id] ??
+                                    getDefaultSeriesBookIndex(item);
+                                const book = item.books[index] ?? item.books[0];
+                                const unreadIndex = item.books.findIndex(
+                                    (seriesBook) =>
+                                        seriesBook.readCount === 0 &&
+                                        !activeBookIds.has(seriesBook.id),
+                                );
+                                const readCount = item.books.filter(
+                                    (seriesBook) => seriesBook.readCount > 0,
+                                ).length;
+                                const setIndex = (nextIndex: number) =>
+                                    setSeriesBookIndexes((current) => ({
+                                        ...current,
+                                        [item.id]:
+                                            (nextIndex + item.books.length) %
+                                            item.books.length,
+                                    }));
+
+                                return (
+                                    <div
+                                        className="series-candidate"
+                                        key={item.id}
+                                    >
+                                        <BookListItem
+                                            book={book}
+                                            meta={`${
+                                                unreadIndex === index
+                                                    ? "next unread"
+                                                    : book.readCount
+                                                      ? "read"
+                                                      : activeBookIds.has(
+                                                              book.id,
+                                                          )
+                                                        ? "reading"
+                                                        : "unread"
+                                            } · ${readCount}/${item.books.length} read`}
+                                            onSelect={onSelectBook}
+                                            actions={
+                                                <>
+                                                    <IconButton
+                                                        label="Add to chart"
+                                                        onClick={() =>
+                                                            handleAddFlowNode(
+                                                                book,
+                                                            )
+                                                        }
+                                                    >
+                                                        <ListPlus size={15} />
+                                                    </IconButton>
+                                                    <StartReadingButton
+                                                        book={book}
+                                                        onStart={onStart}
+                                                    />
+                                                </>
+                                            }
+                                        />
+                                        <div className="series-candidate-nav">
+                                            <span>
+                                                {item.series.title} ·{" "}
+                                                {index + 1}/{item.books.length}
+                                            </span>
+                                            <div>
+                                                <IconButton
+                                                    label="Previous book"
+                                                    onClick={() =>
+                                                        setIndex(index - 1)
+                                                    }
+                                                >
+                                                    <ChevronLeft size={15} />
+                                                </IconButton>
+                                                <IconButton
+                                                    label="Next book"
+                                                    onClick={() =>
+                                                        setIndex(index + 1)
+                                                    }
+                                                >
+                                                    <ChevronRight size={15} />
+                                                </IconButton>
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                            {visibleSuggestions < suggestionItems.length ? (
+                                <button
+                                    className="show-more-button"
+                                    onClick={() =>
+                                        setVisibleSuggestions((current) =>
+                                            Math.min(
+                                                current + SUGGESTION_PAGE_SIZE,
+                                                suggestionItems.length,
+                                            ),
+                                        )
                                     }
-                                />
-                            ))}
+                                    type="button"
+                                >
+                                    Show more
+                                </button>
+                            ) : null}
                         </div>
                     </section>
 
@@ -430,7 +693,7 @@ export default function FlowPage({
                         flowNodes={flowNodes}
                         onSelectBook={onSelectBook}
                         onAddFlowNode={(book) => {
-                            onAddFlowNode(book);
+                            handleAddFlowNode(book);
                             setPickerOpen(false);
                         }}
                         onStart={(book) => {
@@ -442,6 +705,92 @@ export default function FlowPage({
             ) : null}
         </div>
     );
+}
+
+type SeriesSuggestionItem = {
+    type: "series";
+    id: string;
+    title: string;
+    series: Series;
+    books: BookWithMeta[];
+};
+
+type StandaloneSuggestionItem = {
+    type: "standalone";
+    id: string;
+    title: string;
+    book: BookWithMeta;
+};
+
+type SuggestionItem = SeriesSuggestionItem | StandaloneSuggestionItem;
+
+function alignFlowPositions(flowNodes: FlowNode[]) {
+    const alignedX = alignAxis(
+        flowNodes.map((node) => ({ id: node.id, value: node.position_x })),
+        FLOW_GRID[0],
+    );
+    const alignedY = alignAxis(
+        flowNodes.map((node) => ({ id: node.id, value: node.position_y })),
+        FLOW_GRID[1],
+    );
+
+    return new Map(
+        flowNodes.map((node) => [
+            node.id,
+            {
+                x:
+                    alignedX.get(node.id) ??
+                    snapToGrid(node.position_x, FLOW_GRID[0]),
+                y:
+                    alignedY.get(node.id) ??
+                    snapToGrid(node.position_y, FLOW_GRID[1]),
+            },
+        ]),
+    );
+}
+
+function alignAxis(
+    positions: Array<{ id: string; value: number }>,
+    gridSize: number,
+) {
+    const aligned = new Map<string, number>();
+    const sorted = [...positions].sort((a, b) => a.value - b.value);
+    const clusters: Array<Array<{ id: string; value: number }>> = [];
+
+    for (const position of sorted) {
+        const cluster = clusters[clusters.length - 1];
+        if (
+            cluster &&
+            Math.abs(position.value - medianValue(cluster)) <=
+                TIDY_ALIGNMENT_TOLERANCE
+        ) {
+            cluster.push(position);
+        } else {
+            clusters.push([position]);
+        }
+    }
+
+    for (const cluster of clusters) {
+        const target = snapToGrid(medianValue(cluster), gridSize);
+        for (const position of cluster) {
+            aligned.set(position.id, target);
+        }
+    }
+
+    return aligned;
+}
+
+function medianValue(values: Array<{ value: number }>) {
+    const sorted = values.map((item) => item.value).sort((a, b) => a - b);
+    const middle = Math.floor(sorted.length / 2);
+    if (sorted.length % 2 === 1) {
+        return sorted[middle];
+    }
+    return (sorted[middle - 1] + sorted[middle]) / 2;
+}
+
+function snapToGrid(value: number, gridSize: number) {
+    return Math.round(value / gridSize) * gridSize;
 }
 
 type FlowNodeData = {
