@@ -31,7 +31,7 @@ import BookForm from "./components/BookForm";
 import BookCsvUploadForm from "./components/BookCsvUploadForm";
 import EntryForm from "./components/EntryForm";
 import FlowPage from "./components/FlowPage";
-import { snapFlowPosition } from "./components/FlowPage";
+import { snapFlowPosition } from "./lib/flow";
 import LibraryPage from "./components/LibraryPage";
 import HistoryPage from "./components/HistoryPage";
 import StatsPage from "./components/StatsPage";

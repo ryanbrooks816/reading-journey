@@ -22,11 +22,13 @@ import {
     Search,
     SlidersHorizontal,
     Star,
+    Trash2,
 } from "lucide-react";
 import type { CSSProperties } from "react";
 import { BookWithMeta, Series, FlowNode, FlowEdge } from "../lib/types";
 import type { LibraryStats } from "../lib/library";
 import { formatNumber } from "../lib/format";
+import { FLOW_GRID, snapFlowPosition } from "../lib/flow";
 import { PageHero } from "./PageHero";
 import IconButton from "./IconButton";
 import BookCover from "./BookCover";
@@ -35,14 +37,13 @@ import SeriesProgressBar from "./SeriesProgressBar";
 import BookListItem from "./BookListItem";
 import StartReadingButton from "./StartReadingButton";
 
-export const FLOW_GRID: [number, number] = [32, 32];
-
-export function snapFlowPosition(position: { x: number; y: number }) {
-    return {
-        x: Math.round(position.x / FLOW_GRID[0]) * FLOW_GRID[0],
-        y: Math.round(position.y / FLOW_GRID[1]) * FLOW_GRID[1],
-    };
-}
+const SUGGESTION_PAGE_SIZE = 5;
+const TIDY_ALIGNMENT_TOLERANCE = 48;
+const DEFAULT_VIEWPORT = {
+    x: 36,
+    y: 92,
+    zoom: 0.72,
+};
 
 export default function FlowPage({
     books,
