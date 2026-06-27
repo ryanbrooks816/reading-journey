@@ -173,6 +173,38 @@ export default function FlowPage({
         setNodes(flow.nodes);
     }, [flow, setNodes]);
 
+    useEffect(() => {
+        setSelectedEdgeIds((current) =>
+            current.filter((id) => flow.edges.some((edge) => edge.id === id)),
+        );
+    }, [flow.edges]);
+
+    useEffect(() => {
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (
+                selectedEdgeIds.length === 0 ||
+                (event.key !== "Backspace" && event.key !== "Delete")
+            ) {
+                return;
+            }
+
+            const target = event.target as HTMLElement | null;
+            if (
+                target?.closest("input, textarea, select") ||
+                target?.isContentEditable
+            ) {
+                return;
+            }
+
+            event.preventDefault();
+            selectedEdgeIds.forEach((id) => onDeleteFlowEdge(id));
+            setSelectedEdgeIds([]);
+        };
+
+        window.addEventListener("keydown", handleKeyDown);
+        return () => window.removeEventListener("keydown", handleKeyDown);
+    }, [onDeleteFlowEdge, selectedEdgeIds]);
+
     const handleConnect = useCallback(
         (connection: Connection) => {
             if (connection.source && connection.target) {
@@ -252,13 +284,15 @@ export default function FlowPage({
                                         onDeleteFlowEdge(edge.id),
                                     )
                                 }
+                                onEdgeDoubleClick={(_event, edge) =>
+                                    onDeleteFlowEdge(edge.id)
+                                }
                                 onNodeDragStop={handleNodeDragStop}
-                                defaultViewport={{
-                                    x: 36,
-                                    y: 92,
-                                    zoom: 0.82,
-                                }}
-                                minZoom={0.72}
+                                onMoveEnd={handleMoveEnd}
+                                onSelectionChange={handleSelectionChange}
+                                proOptions={{ hideAttribution: true }}
+                                defaultViewport={DEFAULT_VIEWPORT}
+                                minZoom={0.28}
                                 maxZoom={1.7}
                                 snapToGrid
                                 snapGrid={FLOW_GRID}
@@ -485,6 +519,7 @@ function buildFlowElements(
             type: "smoothstep",
             deletable: true,
             animated: nextNodeIds.has(edge.target_node_id),
+            interactionWidth: 18,
             markerEnd: {
                 type: MarkerType.ArrowClosed,
                 width: 14,

@@ -426,6 +426,29 @@ export default function App() {
         }
     }
 
+    async function deleteFlowNode(nodeId: string) {
+        setSaving(true);
+        setError("");
+        try {
+            await libraryApi.deleteFlowNode(nodeId);
+            showToast({
+                title: "Node removed",
+                detail: "That book was removed from the journey chart.",
+                tone: "info",
+                action: { label: "View flow", view: "flow" },
+            });
+            await refresh();
+        } catch (err) {
+            setError(
+                err instanceof Error
+                    ? err.message
+                    : "Unable to remove that node.",
+            );
+        } finally {
+            setSaving(false);
+        }
+    }
+
     return (
         <div
             className={
