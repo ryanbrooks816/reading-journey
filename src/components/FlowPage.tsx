@@ -59,8 +59,10 @@ export default function FlowPage({
     onStart,
     onAddFlowNode,
     onUpdateFlowNodePosition,
+    onUpdateFlowNodeLabel,
     onAddFlowEdge,
     onDeleteFlowEdge,
+    onDeleteFlowNode,
 }: {
     books: BookWithMeta[];
     series: Series[];
@@ -173,6 +175,8 @@ export default function FlowPage({
                 nextNodeIds,
                 onSelectBook,
                 onStart,
+                onUpdateFlowNodeLabel,
+                onDeleteFlowNode,
             ),
         [
             activeBookIds,
@@ -183,6 +187,8 @@ export default function FlowPage({
             nextNodeIds,
             onSelectBook,
             onStart,
+            onUpdateFlowNodeLabel,
+            onDeleteFlowNode,
         ],
     );
     const [nodes, setNodes, onNodesChange] = useNodesState(flow.nodes);
@@ -800,6 +806,8 @@ type FlowNodeData = {
     state: "read" | "reading" | "next" | "blocked";
     onSelectBook: (id: string) => void;
     onStart: (book: BookWithMeta) => void;
+    onUpdateFlowNodeLabel: (id: string, label: string) => void;
+    onDeleteFlowNode: (id: string) => void;
 };
 
 function buildFlowElements(
@@ -849,6 +857,8 @@ function buildFlowElements(
                 index,
                 onSelectBook,
                 onStart,
+                onUpdateFlowNodeLabel,
+                onDeleteFlowNode,
             },
         };
     });

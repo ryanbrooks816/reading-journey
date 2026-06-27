@@ -512,8 +512,12 @@ export default function App() {
                                     onUpdateFlowNodePosition={
                                         updateFlowNodePosition
                                     }
+                                    onUpdateFlowNodeLabel={
+                                        updateFlowNodeLabel
+                                    }
                                     onAddFlowEdge={addFlowEdge}
                                     onDeleteFlowEdge={deleteFlowEdge}
+                                    onDeleteFlowNode={deleteFlowNode}
                                 />
                             ) : null}
 
