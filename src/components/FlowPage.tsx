@@ -428,9 +428,11 @@ function buildFlowElements(
     nextNodeIds: Set<string>,
     onSelectBook: (id: string) => void,
     onStart: (book: BookWithMeta) => void,
+    onUpdateFlowNodeLabel: (id: string, label: string) => void,
+    onDeleteFlowNode: (id: string) => void,
 ): { nodes: Node<FlowNodeData>[]; edges: Edge[] } {
     const nodeWidth = 280;
-    const nodeHeight = 126;
+    const nodeHeight = 138;
     const validNodeIds = new Set(flowNodes.map((node) => node.id));
     const nodes = flowNodes.flatMap((flowNode, index) => {
         const book = bookById.get(flowNode.book_id);
@@ -499,7 +501,27 @@ const flowNodeTypes = {
 };
 
 function FlowBookNode({ data }: NodeProps<Node<FlowNodeData>>) {
-    const { book, flowNode, index, state, onSelectBook, onStart } = data;
+    const {
+        book,
+        flowNode,
+        index,
+        state,
+        onSelectBook,
+        onStart,
+        onUpdateFlowNodeLabel,
+        onDeleteFlowNode,
+    } = data;
+    const [note, setNote] = useState(flowNode.label);
+
+    useEffect(() => {
+        setNote(flowNode.label);
+    }, [flowNode.label]);
+
+    const saveNote = () => {
+        const trimmed = note.trim();
+        setNote(trimmed);
+        onUpdateFlowNodeLabel(flowNode.id, trimmed);
+    };
     const stateLabel =
         state === "read"
             ? "Read"
@@ -540,10 +562,27 @@ function FlowBookNode({ data }: NodeProps<Node<FlowNodeData>>) {
                     {String(index + 1).padStart(2, "0")}
                 </span>
                 <h3>{book.title}</h3>
-                <p>{flowNode.label || book.series?.title || book.category}</p>
+                <input
+                    className="node-note nodrag"
+                    value={note}
+                    onChange={(event) => setNote(event.target.value)}
+                    onBlur={saveNote}
+                    onKeyDown={(event) => {
+                        if (event.key === "Enter") {
+                            event.currentTarget.blur();
+                        }
+                    }}
+                    placeholder="Add note"
+                />
             </div>
             <div className="node-actions nodrag">
                 <StartReadingButton book={book} onStart={onStart} compact />
+                <IconButton
+                    label="Remove from flow"
+                    onClick={() => onDeleteFlowNode(flowNode.id)}
+                >
+                    <Trash2 size={15} />
+                </IconButton>
             </div>
         </article>
     );

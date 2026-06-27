@@ -335,6 +335,36 @@ export default function App() {
         }
     }
 
+    async function updateFlowNodeLabel(nodeId: string, label: string) {
+        const currentNode = libraryState.flowNodes.find(
+            (node) => node.id === nodeId,
+        );
+        if (!currentNode || currentNode.label === label) {
+            return;
+        }
+
+        setState((current) => ({
+            ...current,
+            flowNodes: current.flowNodes.map((node) =>
+                node.id === nodeId ? { ...node, label } : node,
+            ),
+        }));
+
+        try {
+            await libraryApi.updateFlowNode(nodeId, {
+                ...currentNode,
+                label,
+            });
+        } catch (err) {
+            setError(
+                err instanceof Error
+                    ? err.message
+                    : "Unable to save the flow note.",
+            );
+            await refresh();
+        }
+    }
+
     async function addFlowEdge(sourceNodeId: string, targetNodeId: string) {
         if (sourceNodeId === targetNodeId) {
             return;
