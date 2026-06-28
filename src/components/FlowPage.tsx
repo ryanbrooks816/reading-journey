@@ -19,6 +19,8 @@ import {
     Check,
     ChevronLeft,
     ChevronRight,
+    GitBranch,
+    ListOrdered,
     ListPlus,
     Map as MapIcon,
     Play,
@@ -85,6 +87,7 @@ export default function FlowPage({
     onDeleteFlowNode: (id: string) => void;
 }) {
     const [pickerOpen, setPickerOpen] = useState(false);
+    const [mode, setMode] = useState<"chart" | "path">("chart");
     const [gridVisible, setGridVisible] = useState(true);
     const [viewport, setViewport] = useState(DEFAULT_VIEWPORT);
     const [selectedEdgeIds, setSelectedEdgeIds] = useState<string[]>([]);
@@ -289,11 +292,43 @@ export default function FlowPage({
         });
     }, [viewport]);
 
+    const orderedFlowNodes = useMemo(
+        () => orderFlowNodes(flowNodes, flowEdges),
+        [flowEdges, flowNodes],
+    );
+
+    const pathLastNode = orderedFlowNodes[orderedFlowNodes.length - 1];
+
+    const getPathAppendPosition = useCallback(() => {
+        if (pathLastNode) {
+            return snapFlowPosition({
+                x: pathLastNode.position_x + 320,
+                y: pathLastNode.position_y,
+            });
+        }
+        return getViewportCenterPosition();
+    }, [getViewportCenterPosition, pathLastNode]);
+
     const handleAddFlowNode = useCallback(
-        (book: BookWithMeta) => {
-            onAddFlowNode(book, { position: getViewportCenterPosition() });
+        async (book: BookWithMeta) => {
+            const node = await onAddFlowNode(book, {
+                position:
+                    mode === "path"
+                        ? getPathAppendPosition()
+                        : getViewportCenterPosition(),
+            });
+            if (mode === "path" && node && pathLastNode) {
+                onAddFlowEdge(pathLastNode.id, node.id);
+            }
         },
-        [getViewportCenterPosition, onAddFlowNode],
+        [
+            getPathAppendPosition,
+            getViewportCenterPosition,
+            mode,
+            onAddFlowEdge,
+            onAddFlowNode,
+            pathLastNode,
+        ],
     );
 
     const seriesGroups = useMemo(
@@ -400,8 +435,44 @@ export default function FlowPage({
 
             <div className="journey-chart-layout">
                 <section className="journey-chart-panel">
+                    <div className="flow-mode-switch" role="tablist">
+                        <button
+                            aria-selected={mode === "chart"}
+                            className={mode === "chart" ? "active" : ""}
+                            onClick={() => setMode("chart")}
+                            role="tab"
+                            type="button"
+                        >
+                            <GitBranch size={16} />
+                            Chart
+                        </button>
+                        <button
+                            aria-selected={mode === "path"}
+                            className={mode === "path" ? "active" : ""}
+                            onClick={() => setMode("path")}
+                            role="tab"
+                            type="button"
+                        >
+                            <ListOrdered size={16} />
+                            Path
+                        </button>
+                    </div>
                     <div className="journey-flow-canvas" ref={flowCanvasRef}>
-                        {nodes.length ? (
+                        {mode === "path" ? (
+                            <PathPlanner
+                                flowNodes={orderedFlowNodes}
+                                flowEdges={flowEdges}
+                                bookById={bookById}
+                                completedBookIds={completedBookIds}
+                                activeBookIds={activeBookIds}
+                                nextNodeIds={nextNodeIds}
+                                onSelectBook={onSelectBook}
+                                onStart={onStart}
+                                onAddBook={() => setPickerOpen(true)}
+                                onUpdateFlowNodeLabel={onUpdateFlowNodeLabel}
+                                onDeleteFlowNode={onDeleteFlowNode}
+                            />
+                        ) : nodes.length ? (
                             <ReactFlow
                                 nodes={nodes}
                                 edges={flow.edges}
@@ -517,7 +588,11 @@ export default function FlowPage({
                                             actions={
                                                 <>
                                                     <IconButton
-                                                        label="Add to chart"
+                                                        label={
+                                                            mode === "path"
+                                                                ? "Add to path"
+                                                                : "Add to chart"
+                                                        }
                                                         onClick={() =>
                                                             handleAddFlowNode(
                                                                 item.book,
@@ -578,7 +653,11 @@ export default function FlowPage({
                                             actions={
                                                 <>
                                                     <IconButton
-                                                        label="Add to chart"
+                                                        label={
+                                                            mode === "path"
+                                                                ? "Add to path"
+                                                                : "Add to chart"
+                                                        }
                                                         onClick={() =>
                                                             handleAddFlowNode(
                                                                 book,
@@ -799,6 +878,63 @@ function snapToGrid(value: number, gridSize: number) {
     return Math.round(value / gridSize) * gridSize;
 }
 
+function orderFlowNodes(flowNodes: FlowNode[], flowEdges: FlowEdge[]) {
+    const nodeById = new Map(flowNodes.map((node) => [node.id, node]));
+    const incomingCount = new Map(flowNodes.map((node) => [node.id, 0]));
+    const outgoing = new Map<string, string[]>();
+
+    for (const edge of flowEdges) {
+        if (!nodeById.has(edge.source_node_id) || !nodeById.has(edge.target_node_id)) {
+            continue;
+        }
+        outgoing.set(edge.source_node_id, [
+            ...(outgoing.get(edge.source_node_id) ?? []),
+            edge.target_node_id,
+        ]);
+        incomingCount.set(
+            edge.target_node_id,
+            (incomingCount.get(edge.target_node_id) ?? 0) + 1,
+        );
+    }
+
+    const byPosition = (a: FlowNode, b: FlowNode) =>
+        a.position_y - b.position_y ||
+        a.position_x - b.position_x ||
+        a.node_order - b.node_order ||
+        a.id.localeCompare(b.id);
+    const queue = flowNodes
+        .filter((node) => (incomingCount.get(node.id) ?? 0) === 0)
+        .sort(byPosition);
+    const ordered: FlowNode[] = [];
+    const seen = new Set<string>();
+
+    while (queue.length) {
+        const node = queue.shift();
+        if (!node || seen.has(node.id)) {
+            continue;
+        }
+        seen.add(node.id);
+        ordered.push(node);
+
+        const nextIds = (outgoing.get(node.id) ?? []).sort((a, b) =>
+            byPosition(nodeById.get(a)!, nodeById.get(b)!),
+        );
+        for (const nextId of nextIds) {
+            incomingCount.set(nextId, (incomingCount.get(nextId) ?? 1) - 1);
+            if ((incomingCount.get(nextId) ?? 0) <= 0) {
+                const nextNode = nodeById.get(nextId);
+                if (nextNode) {
+                    queue.push(nextNode);
+                    queue.sort(byPosition);
+                }
+            }
+        }
+    }
+
+    const leftovers = flowNodes.filter((node) => !seen.has(node.id)).sort(byPosition);
+    return [...ordered, ...leftovers];
+}
+
 type FlowNodeData = {
     flowNode: FlowNode;
     book: BookWithMeta;
@@ -973,6 +1109,199 @@ function FlowBookNode({ data }: NodeProps<Node<FlowNodeData>>) {
                 <StartReadingButton book={book} onStart={onStart} compact />
                 <IconButton
                     label="Remove from flow"
+                    onClick={() => onDeleteFlowNode(flowNode.id)}
+                >
+                    <Trash2 size={15} />
+                </IconButton>
+            </div>
+        </article>
+    );
+}
+
+function PathPlanner({
+    flowNodes,
+    flowEdges,
+    bookById,
+    completedBookIds,
+    activeBookIds,
+    nextNodeIds,
+    onSelectBook,
+    onStart,
+    onAddBook,
+    onUpdateFlowNodeLabel,
+    onDeleteFlowNode,
+}: {
+    flowNodes: FlowNode[];
+    flowEdges: FlowEdge[];
+    bookById: Map<string, BookWithMeta>;
+    completedBookIds: Set<string>;
+    activeBookIds: Set<string>;
+    nextNodeIds: Set<string>;
+    onSelectBook: (id: string) => void;
+    onStart: (book: BookWithMeta) => void;
+    onAddBook: () => void;
+    onUpdateFlowNodeLabel: (id: string, label: string) => void;
+    onDeleteFlowNode: (id: string) => void;
+}) {
+    const connectedPairs = new Set(
+        flowEdges.map((edge) => `${edge.source_node_id}:${edge.target_node_id}`),
+    );
+    const pathItems = flowNodes.flatMap((flowNode) => {
+        const book = bookById.get(flowNode.book_id);
+        if (!book) {
+            return [];
+        }
+        const state: FlowNodeData["state"] = completedBookIds.has(book.id)
+            ? "read"
+            : activeBookIds.has(book.id)
+              ? "reading"
+              : nextNodeIds.has(flowNode.id)
+                ? "next"
+                : "blocked";
+        return [{ flowNode, book, state }];
+    });
+    const nextItem =
+        pathItems.find((item) => item.state === "next") ??
+        pathItems.find((item) => item.state === "reading") ??
+        pathItems.find((item) => item.state === "blocked");
+
+    if (!pathItems.length) {
+        return (
+            <button
+                className="route-empty journey-empty"
+                onClick={onAddBook}
+                type="button"
+            >
+                <Plus size={19} />
+                Start a reading path
+            </button>
+        );
+    }
+
+    return (
+        <section className="path-planner">
+            <div className="path-next-panel">
+                <span className="eyebrow">Next Up</span>
+                {nextItem ? (
+                    <div className="path-next-book">
+                        <BookCover book={nextItem.book} scale={0.58} />
+                        <div>
+                            <h2>{nextItem.book.title}</h2>
+                            <p>
+                                {nextItem.book.series?.title ??
+                                    nextItem.book.category}
+                            </p>
+                        </div>
+                        <StartReadingButton
+                            book={nextItem.book}
+                            onStart={onStart}
+                        />
+                    </div>
+                ) : (
+                    <p className="path-empty-copy">Everything here is read.</p>
+                )}
+            </div>
+
+            <div className="path-list">
+                {pathItems.map((item, index) => {
+                    const next = pathItems[index + 1];
+                    const isConnectedToNext = next
+                        ? connectedPairs.has(
+                              `${item.flowNode.id}:${next.flowNode.id}`,
+                          )
+                        : false;
+                    return (
+                        <PathRow
+                            key={item.flowNode.id}
+                            book={item.book}
+                            flowNode={item.flowNode}
+                            index={index}
+                            state={item.state}
+                            isConnectedToNext={isConnectedToNext}
+                            onSelectBook={onSelectBook}
+                            onStart={onStart}
+                            onUpdateFlowNodeLabel={onUpdateFlowNodeLabel}
+                            onDeleteFlowNode={onDeleteFlowNode}
+                        />
+                    );
+                })}
+                <button className="path-add-button" onClick={onAddBook} type="button">
+                    <Plus size={16} />
+                    Add another book
+                </button>
+            </div>
+        </section>
+    );
+}
+
+function PathRow({
+    book,
+    flowNode,
+    index,
+    state,
+    isConnectedToNext,
+    onSelectBook,
+    onStart,
+    onUpdateFlowNodeLabel,
+    onDeleteFlowNode,
+}: {
+    book: BookWithMeta;
+    flowNode: FlowNode;
+    index: number;
+    state: FlowNodeData["state"];
+    isConnectedToNext: boolean;
+    onSelectBook: (id: string) => void;
+    onStart: (book: BookWithMeta) => void;
+    onUpdateFlowNodeLabel: (id: string, label: string) => void;
+    onDeleteFlowNode: (id: string) => void;
+}) {
+    const [note, setNote] = useState(flowNode.label);
+
+    useEffect(() => {
+        setNote(flowNode.label);
+    }, [flowNode.label]);
+
+    const saveNote = () => {
+        const trimmed = note.trim();
+        setNote(trimmed);
+        onUpdateFlowNodeLabel(flowNode.id, trimmed);
+    };
+
+    return (
+        <article className={`path-row ${state}`}>
+            <div className="path-step">
+                <span>{String(index + 1).padStart(2, "0")}</span>
+                {isConnectedToNext ? <i /> : null}
+            </div>
+            <button
+                className="path-cover"
+                onClick={() => onSelectBook(book.id)}
+                type="button"
+            >
+                <BookCover book={book} scale={0.54} />
+            </button>
+            <div className="path-copy">
+                <div>
+                    <h3>{book.title}</h3>
+                    <p>{book.series?.title ?? book.category}</p>
+                </div>
+                <input
+                    className="node-note"
+                    value={note}
+                    onChange={(event) => setNote(event.target.value)}
+                    onBlur={saveNote}
+                    onKeyDown={(event) => {
+                        if (event.key === "Enter") {
+                            event.currentTarget.blur();
+                        }
+                    }}
+                    placeholder={state === "next" ? "Next Up:" : "Plan note"}
+                />
+            </div>
+            <div className="path-actions">
+                <StartReadingButton book={book} onStart={onStart} compact />
+                <IconButton
+                    label="Remove from path"
                     onClick={() => onDeleteFlowNode(flowNode.id)}
                 >
                     <Trash2 size={15} />
