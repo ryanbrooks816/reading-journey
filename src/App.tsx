@@ -267,13 +267,13 @@ export default function App() {
             allowDuplicate?: boolean;
             position?: { x: number; y: number };
         } = {},
-    ) {
+    ): Promise<FlowNode | undefined> {
         if (
             !options.allowDuplicate &&
             libraryState.flowNodes.some((node) => node.book_id === book.id)
         ) {
             setDuplicateFlowBook(book);
-            return;
+            return undefined;
         }
 
         const position =
@@ -283,7 +283,9 @@ export default function App() {
                 y: 128 + Math.floor(libraryState.flowNodes.length / 5) * 192,
             });
 
-        await mutate(async () => {
+        setSaving(true);
+        setError("");
+        try {
             const node = await libraryApi.createFlowNode({
                 book_id: book.id,
                 label: "",

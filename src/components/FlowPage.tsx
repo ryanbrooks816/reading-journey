@@ -804,7 +804,7 @@ export default function FlowPage({
                         flowNodes={flowNodes}
                         onSelectBook={onSelectBook}
                         onAddFlowNode={(book) => {
-                            handleAddFlowNode(book);
+                            void handleAddFlowNode(book);
                             setPickerOpen(false);
                         }}
                         onStart={(book) => {
