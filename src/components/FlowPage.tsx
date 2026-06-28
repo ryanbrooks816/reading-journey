@@ -60,6 +60,7 @@ export default function FlowPage({
     onSelectBook,
     onStart,
     onAddFlowNode,
+    onAddSeriesToFlow,
     onUpdateFlowNodePosition,
     onUpdateFlowNodeLabel,
     onAddFlowEdge,
@@ -76,7 +77,8 @@ export default function FlowPage({
     onAddFlowNode: (
         book: BookWithMeta,
         options?: { position?: { x: number; y: number } },
-    ) => void;
+    ) => Promise<FlowNode | undefined> | FlowNode | undefined;
+    onAddSeriesToFlow: (series: Series, books: BookWithMeta[]) => void;
     onUpdateFlowNodePosition: (
         id: string,
         position: { x: number; y: number },
@@ -680,6 +682,17 @@ export default function FlowPage({
                                             </span>
                                             <div>
                                                 <IconButton
+                                                    label="Add series"
+                                                    onClick={() =>
+                                                        onAddSeriesToFlow(
+                                                            item.series,
+                                                            item.books,
+                                                        )
+                                                    }
+                                                >
+                                                    <ListOrdered size={15} />
+                                                </IconButton>
+                                                <IconButton
                                                     label="Previous book"
                                                     onClick={() =>
                                                         setIndex(index - 1)
@@ -762,6 +775,19 @@ export default function FlowPage({
                                                     ).length
                                                 }
                                             />
+                                            <button
+                                                className="series-map-button"
+                                                onClick={() =>
+                                                    onAddSeriesToFlow(
+                                                        item,
+                                                        group,
+                                                    )
+                                                }
+                                                type="button"
+                                            >
+                                                <ListPlus size={14} />
+                                                Map series
+                                            </button>
                                         </article>
                                     );
                                 },

@@ -17,7 +17,7 @@ import {
 import { todayValue } from "./lib/dates";
 import { titleCase } from "./lib/format";
 import { useStoredPreferences } from "./lib/preferences";
-import type { BookWithMeta, ReadingEntry } from "./lib/types";
+import type { BookWithMeta, FlowNode, ReadingEntry, Series } from "./lib/types";
 import Sidebar from "./components/Sidebar";
 import { View } from "./components/Sidebar";
 import { LoadingPanel } from "./components/LoadingPanel";
@@ -298,8 +298,102 @@ export default function App() {
                 action: { label: "View flow", view: "flow", bookId: book.id },
             });
             setDuplicateFlowBook(null);
+            await refresh();
             return node;
-        });
+        } catch (err) {
+            setError(
+                err instanceof Error
+                    ? err.message
+                    : "Unable to add that book to the flow.",
+            );
+            return undefined;
+        } finally {
+            setSaving(false);
+        }
+    }
+
+    async function addSeriesToFlow(series: Series, books: BookWithMeta[]) {
+        const sortedBooks = [...books].sort(
+            (a, b) => a.sort_order - b.sort_order || a.title.localeCompare(b.title),
+        );
+        if (!sortedBooks.length) {
+            return;
+        }
+
+        const nodesByBookId = new Map<string, FlowNode>();
+        for (const node of libraryState.flowNodes) {
+            if (!nodesByBookId.has(node.book_id)) {
+                nodesByBookId.set(node.book_id, node);
+            }
+        }
+
+        const maxY = libraryState.flowNodes.length
+            ? Math.max(...libraryState.flowNodes.map((node) => node.position_y))
+            : -64;
+        const rowY = snapFlowPosition({ x: 0, y: maxY + 192 }).y;
+        const firstX = 128;
+        const orderedNodes: FlowNode[] = [];
+
+        setSaving(true);
+        setError("");
+        try {
+            for (const [index, book] of sortedBooks.entries()) {
+                const existing = nodesByBookId.get(book.id);
+                if (existing) {
+                    orderedNodes.push(existing);
+                    continue;
+                }
+
+                const position = snapFlowPosition({
+                    x: firstX + index * 320,
+                    y: rowY,
+                });
+                const node = await libraryApi.createFlowNode({
+                    book_id: book.id,
+                    label: "",
+                    position_x: position.x,
+                    position_y: position.y,
+                    node_order: Date.now() + index,
+                });
+                nodesByBookId.set(book.id, node);
+                orderedNodes.push(node);
+            }
+
+            const existingEdges = new Set(
+                libraryState.flowEdges.map(
+                    (edge) => `${edge.source_node_id}:${edge.target_node_id}`,
+                ),
+            );
+            for (let index = 0; index < orderedNodes.length - 1; index += 1) {
+                const source = orderedNodes[index];
+                const target = orderedNodes[index + 1];
+                const key = `${source.id}:${target.id}`;
+                if (existingEdges.has(key)) {
+                    continue;
+                }
+                await libraryApi.createFlowEdge({
+                    source_node_id: source.id,
+                    target_node_id: target.id,
+                });
+                existingEdges.add(key);
+            }
+
+            showToast({
+                title: "Series mapped",
+                detail: `${series.title} was added as a connected path.`,
+                tone: "success",
+                action: { label: "View flow", view: "flow" },
+            });
+            await refresh();
+        } catch (err) {
+            setError(
+                err instanceof Error
+                    ? err.message
+                    : "Unable to add that series to the flow.",
+            );
+        } finally {
+            setSaving(false);
+        }
     }
 
     async function updateFlowNodePosition(
@@ -509,6 +603,7 @@ export default function App() {
                                     onSelectBook={setSelectedBookId}
                                     onStart={quickStart}
                                     onAddFlowNode={addFlowNode}
+                                    onAddSeriesToFlow={addSeriesToFlow}
                                     onUpdateFlowNodePosition={
                                         updateFlowNodePosition
                                     }
