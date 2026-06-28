@@ -1104,7 +1104,7 @@ blockquote {
 
 .flow-grid-toggle {
     position: absolute;
-    left: 0.85rem;
+    right: 0.85rem;
     top: 0.85rem;
     z-index: 6;
     border: 1px solid rgba(68, 48, 25, 0.14);
