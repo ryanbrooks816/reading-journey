@@ -7,3 +7,4 @@ dist
 .DS_Store
 wrangler.jsonc
 .stack-agent.json
+/.r2-export
