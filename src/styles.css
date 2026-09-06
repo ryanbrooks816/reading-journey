@@ -838,6 +838,10 @@ blockquote {
     @apply grid grid-cols-[72px_minmax(0,1fr)_minmax(130px,auto)] items-center gap-3;
 }
 
+.series-progress {
+    grid-template-columns: 72px minmax(0, 1fr) auto;
+}
+
 .chart-row > div,
 .series-progress > .series-progress-bar {
     height: 0.72rem;
@@ -853,23 +857,52 @@ blockquote {
     background: var(--user-accent);
 }
 
-.month-grid {
-    @apply grid min-h-[190px] grid-cols-[repeat(auto-fit,minmax(54px,1fr))] items-end gap-3;
-}
-
-.month-bar {
-    @apply flex min-h-[170px] flex-col items-center justify-end gap-2;
-}
-
-.month-bar div {
+.month-line-chart {
+    display: block;
     width: 100%;
-    border-radius: 999px 999px 4px 4px;
-    background: var(--water);
+    height: auto;
+    overflow: visible;
 }
 
-.month-bar span,
-.month-bar strong {
-    font-size: 0.78rem;
+.month-chart-grid-line {
+    stroke: rgba(68, 48, 25, 0.12);
+    stroke-dasharray: 4 6;
+    stroke-width: 1;
+}
+
+.month-chart-axis-line {
+    stroke: rgba(68, 48, 25, 0.28);
+    stroke-width: 1.5;
+}
+
+.month-chart-line {
+    fill: none;
+    stroke: var(--water);
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 4;
+}
+
+.month-chart-point {
+    fill: var(--paper-soft);
+    stroke: var(--water);
+    stroke-width: 2.5;
+}
+
+.month-chart-y-label,
+.month-chart-x-label {
+    fill: var(--muted);
+    font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+    font-size: 0.7rem;
+    font-weight: 780;
+}
+
+.month-chart-y-label {
+    text-anchor: end;
+}
+
+.month-chart-x-label {
+    text-anchor: middle;
 }
 
 .category-grid {

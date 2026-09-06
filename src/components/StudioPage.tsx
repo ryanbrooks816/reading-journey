@@ -1,5 +1,4 @@
 import { Layers3, Palette, Pencil, Plus, Trash2 } from "lucide-react";
-import type { CSSProperties } from "react";
 import type { Series } from "../lib/types";
 import type { Preferences } from "../lib/preferences";
 import IconButton from "./IconButton";
@@ -30,14 +29,14 @@ export default function StudioPage({
     ];
 
     return (
-        <>
+        <div className="grid gap-3">
             <PageHero
                 icon={<Palette size={16} />}
                 kicker="Studio"
                 title="Preferences"
             />
-            <div className="grid grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] gap-3 mt-3 max-[1180px]:grid-cols-1">
-                <section className="panel col-span-full">
+            <div className="grid grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] items-start gap-3 max-[1180px]:grid-cols-1">
+                <section className="panel">
                     <div className="form-grid">
                         <label className="form-label">
                             <span className="field-label">Library name</span>
@@ -127,6 +126,6 @@ export default function StudioPage({
                     </div>
                 </section>
             </div>
-        </>
+        </div>
     );
 }
