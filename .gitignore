@@ -9,5 +9,6 @@ dist/
 *.tsbuildinfo
 .DS_Store
 wrangler.jsonc
+wrangler.json
+wrangler.toml
 .stack-agent.json
-
