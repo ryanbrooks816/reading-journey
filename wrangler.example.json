@@ -11,13 +11,15 @@
         {
             "binding": "DB",
             "database_name": "reading",
-            "database_id": "YOUR_D1_DATABASE_ID"
+            "database_id": "00000000-0000-4000-8000-000000000000",
+            "remote": true
         }
     ],
     "r2_buckets": [
         {
             "binding": "BOOK_COVERS",
-            "bucket_name": "YOUR_R2_BUCKET_NAME"
+            "bucket_name": "reading-journey-covers",
+            "remote": true
         }
     ]
 }
