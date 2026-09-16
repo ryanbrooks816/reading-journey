@@ -5,6 +5,7 @@ import {
     useEffect,
     useCallback,
     useMemo,
+    useRef,
 } from "react";
 import { libraryApi } from "./lib/api";
 import {
@@ -16,7 +17,10 @@ import {
 } from "./lib/library";
 import { todayValue } from "./lib/dates";
 import { titleCase } from "./lib/format";
-import { useStoredPreferences } from "./lib/preferences";
+import {
+    defaultPreferences,
+    type Preferences,
+} from "./lib/preferences";
 import type { BookWithMeta, FlowNode, ReadingEntry, Series } from "./lib/types";
 import Sidebar from "./components/Sidebar";
 import { View } from "./components/Sidebar";
@@ -47,7 +51,9 @@ export default function App() {
 
     const [modal, setModal] = useState<ModalState | null>(null);
 
-    const [preferences, setPreferences] = useStoredPreferences();
+    const [preferences, setPreferencesState] =
+        useState<Preferences>(defaultPreferences);
+    const preferenceSaveTimeout = useRef<number | null>(null);
 
     const [libraryState, setState] = useState<LibraryState>(emptyLibraryState);
     const library = useMemo(() => buildLibrary(libraryState), [libraryState]);
@@ -72,6 +78,7 @@ export default function App() {
             const next = await libraryApi.getState();
 
             setState(next);
+            setPreferencesState(next.preferences);
             setSelectedBookId(next.books[0]?.id ?? null);
         } catch (err) {
             setError(
@@ -81,6 +88,32 @@ export default function App() {
             setLoading(false);
         }
     }, []);
+
+    const setPreferences = useCallback((next: Preferences) => {
+        setPreferencesState(next);
+
+        if (preferenceSaveTimeout.current !== null) {
+            window.clearTimeout(preferenceSaveTimeout.current);
+        }
+        preferenceSaveTimeout.current = window.setTimeout(() => {
+            void libraryApi.updatePreferences(next).catch((err: unknown) => {
+                setError(
+                    err instanceof Error
+                        ? err.message
+                        : "Unable to save library preferences.",
+                );
+            });
+        }, 400);
+    }, []);
+
+    useEffect(
+        () => () => {
+            if (preferenceSaveTimeout.current !== null) {
+                window.clearTimeout(preferenceSaveTimeout.current);
+            }
+        },
+        [],
+    );
 
     useEffect(() => {
         void loadLibrary();

@@ -8,6 +8,7 @@ import type {
 } from "./types";
 import { entrySortValue } from "./dates";
 import { entryYear, entryMonthKey, formatMonthLabel } from "./dates";
+import { defaultPreferences, type Preferences } from "./preferences";
 
 export const emptyLibraryState: LibraryState = {
     series: [],
@@ -15,6 +16,7 @@ export const emptyLibraryState: LibraryState = {
     entries: [],
     flowNodes: [],
     flowEdges: [],
+    preferences: defaultPreferences,
     generatedAt: "",
 };
 
@@ -24,6 +26,7 @@ export interface LibraryState {
     entries: ReadingEntry[];
     flowNodes: FlowNode[];
     flowEdges: FlowEdge[];
+    preferences: Preferences;
     generatedAt: string;
 }
 

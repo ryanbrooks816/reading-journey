@@ -30,6 +30,10 @@ export async function routeRequest(
         return json(await getState(db));
     }
 
+    if (request.method === "PUT" && resource === "preferences" && !id) {
+        return json(await updatePreferences(db, await readBody(request)));
+    }
+
     if (resource === "series") {
         if (request.method === "POST" && !id) {
             return json(await createSeries(db, await readBody(request)), 201);
@@ -129,7 +133,14 @@ export async function routeRequest(
 }
 
 async function getState(db: D1Database) {
-    const [series, books, entries, flowNodes, flowEdges] = await Promise.all([
+    const [
+        series,
+        books,
+        entries,
+        flowNodes,
+        flowEdges,
+        preferences,
+    ] = await Promise.all([
         db
             .prepare("SELECT * FROM series ORDER BY sort_order ASC, title ASC")
             .all(),
@@ -158,6 +169,11 @@ async function getState(db: D1Database) {
             )
             .all(),
         db.prepare("SELECT * FROM flow_edges ORDER BY created_at ASC").all(),
+        db
+            .prepare(
+                "SELECT library_name AS libraryName, accent FROM app_preferences WHERE singleton_id = 1",
+            )
+            .first<{ libraryName: string; accent: string }>(),
     ]);
 
     return {
@@ -166,8 +182,34 @@ async function getState(db: D1Database) {
         entries: entries.results,
         flowNodes: flowNodes.results,
         flowEdges: flowEdges.results,
+        preferences: preferences ?? {
+            libraryName: "The Reading Room",
+            accent: "#7f4432",
+        },
         generatedAt: new Date().toISOString(),
     };
+}
+
+async function updatePreferences(db: D1Database, body: JsonRecord) {
+    const libraryName =
+        text(body.libraryName).trim().slice(0, 80) || "The Reading Room";
+    const requestedAccent = text(body.accent);
+    const accent = /^#[\da-f]{6}$/i.test(requestedAccent)
+        ? requestedAccent
+        : "#7f4432";
+
+    await db
+        .prepare(
+            `INSERT INTO app_preferences (singleton_id, library_name, accent)
+      VALUES (1, ?, ?)
+      ON CONFLICT(singleton_id) DO UPDATE SET
+        library_name = excluded.library_name,
+        accent = excluded.accent`,
+        )
+        .bind(libraryName, accent)
+        .run();
+
+    return { libraryName, accent };
 }
 
 function seriesPayload(body: JsonRecord) {

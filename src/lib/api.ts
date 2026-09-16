@@ -1,5 +1,6 @@
 import type { Book, Series, ReadingEntry, FlowNode, FlowEdge } from "./types";
 import type { LibraryState } from "./library";
+import type { Preferences } from "./preferences";
 
 type RequestOptions = Omit<RequestInit, "body"> & {
     body?: unknown;
@@ -57,6 +58,9 @@ async function request<T>(
 
 export const libraryApi = {
     getState: () => request<LibraryState>("/state"),
+
+    updatePreferences: (body: Preferences) =>
+        request<Preferences>("/preferences", { method: "PUT", body }),
 
     createSeries: (body: Partial<Series>) =>
         request<Series>("/series", { method: "POST", body }),
